@@ -7,9 +7,10 @@ repository: https://github.com/yvs2014/dmtr
 environment:
   sdk: ^3.0.2
 
-# Add regular dependencies here.
+# Add regular dependencies here
 dependencies:
   dart_ping: ^8.0.0
+  intl: ^0.18.1
   ncurses: ^0.1.0
 
 dependency_overrides:
