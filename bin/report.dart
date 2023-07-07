@@ -11,7 +11,7 @@ printReport({int indent = 4, String? header, required List<Hop> stat, required i
     print(sprintf('%*s%s', [indent, '', header ?? hopHeader]));
     for (int i = 0; i < hops; i++) {
       String no = sprintf('%2d. ', [i + 1]);
-      print(sprintf('%*s%s', [indent, no, (stat[i].sent > 0) ? stat[i] : '']));
+      print(sprintf('%*s%s', [indent, no, (stat[i].data.sent > 0) ? stat[i] : '']));
     }
   }
   if (!last) print('');

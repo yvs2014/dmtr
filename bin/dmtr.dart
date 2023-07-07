@@ -41,7 +41,7 @@ main(List<String> args) async {
     if (parsed['numeric'] != null) dns = parsed['numeric'];
     if (parsed['report'] != null) {
       report = parsed['report'];
-      count = reportCycles;
+      count ??= reportCycles;
     }
     if (parsed['help'] ?? false) usage(myname, parser.usage, 4);
     if (parsed.rest.isEmpty) throw FormatException("Target HOST is not set");

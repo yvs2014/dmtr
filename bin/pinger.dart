@@ -29,6 +29,7 @@ Future <void> pingHops({required String host, int? count, int timeout = waitTime
 
 Future <void> _readEvents(int ttl, var stream) async {
   await for (final ev in stream) {
+//print("got[ttl=$ttl] $ev"); // TMP
     if (ev.error != null) { // got error
       if (ev.error.error == ErrorType.unknownHost) { // unknown host: stop all pings
         if (hops > 0) {
@@ -39,38 +40,45 @@ Future <void> _readEvents(int ttl, var stream) async {
         return;
       }
     }
+    int ndx = ttl - 1;
     var re = ev.response;
     if (re != null) {
-      int ndx = ttl - 1;
       switch (re?.status) {
         case ReStatus.success:
           if ((re.ttl != null) && (hops > ttl)) {
             hops = ttl; // stop pings at this ttl
             for (int i = hops; i < maxTtl; i++) { stat[i].ping?.stop(); }
           }
-          if (re.time != null) stat[ndx].last = re.time?.inMicroseconds ?? 0;
-          _setHopINSR(ndx, re);
+          _setHopData(ndx, re);
         case ReStatus.discard:
-          _setHopINSR(ndx, re);
-          if ((re.ts != null) && (stat[ndx].ts != null)) {
-            TsUsec tu = _parseTs(re.ts);
-            stat[ndx].last = ((tu.sec - stat[ndx].ts!.sec) * 1000000 + (tu.usec - stat[ndx].ts!.usec)).toInt();
-          }
+          _setHopData(ndx, re);
         case ReStatus.timeout:
-          if (stat[ndx].disc != re.seq) stat[ndx].sent++;
+          if (stat[ndx].seq != re.seq) stat[ndx].data = _incHopDataSent(ndx);
+          stat[ndx].seq = 0;
           stat[ndx].ts = (re.ts != null) ? _parseTs(re.ts) : null; // keep it for possible future discard
       }
     }
+    if ((ev.summary != null) && (stat[ndx].seq == 0)) stat[ndx].data = _incHopDataSent(ndx); // take into account a last timeout
   }
 }
 
 
-void _setHopINSR(int ndx, PingResponse re) {
-   if (re.ip != null) stat[ndx].addr = re.ip;
-   if (re.name != null) stat[ndx].name = re.name;
-   stat[ndx].sent++;
-   stat[ndx].rcvd++;
-   if (re.seq != null) stat[ndx].disc = re.seq!;
+HopData _incHopDataSent(int ndx) => (sent: stat[ndx].data.sent + 1, rcvd: stat[ndx].data.rcvd, last: stat[ndx].data.last);
+
+void _setHopData(int ndx, PingResponse re) {
+  int? last;
+  if (re.time != null) {
+    last = re.time?.inMicroseconds;
+  } else {
+    if ((re.ts != null) && (stat[ndx].ts != null)) {
+      TsUsec tu = _parseTs(re.ts!);
+      last = ((tu.sec - stat[ndx].ts!.sec) * 1000000 + (tu.usec - stat[ndx].ts!.usec)).toInt();
+    }
+  }
+  if (re.ip != null) stat[ndx].addr = re.ip;
+  if (re.name != null) stat[ndx].name = re.name;
+  if (re.seq != null) stat[ndx].seq = re.seq!; // marker of stats
+  stat[ndx].data = (sent: stat[ndx].data.sent + 1, rcvd: stat[ndx].data.rcvd + 1, last: last ?? stat[ndx].data.last);
 }
 
 

@@ -8,21 +8,20 @@ typedef TsUsec = ({int sec, int usec}); // timestamp: sec, usec
 
 final myname = (Platform.executable == 'dart') ? 'dmtr' : Platform.executable;
 
+typedef HopData = ({int sent, int rcvd, int last/*in usec*/}); // as a record to be synced
+
 class Hop {
-  int sent = 0;
-  int rcvd = 0;
-  int last = 0; // in usec
+  HopData data = (sent: 0, rcvd: 0, last: 0);
   String? addr;
   String? name;
-  //
   Ping? ping;
-  int disc = -1; // to avoid dups at calculation of 'sent'
+  int seq = -1;  // a marker to avoid dups at calculation of 'sent'
   TsUsec? ts;    // timestamp of timeouted response
   @override
   String toString() {
     final hop = (name ?? addr) ?? '';
-    String l = (last > 0) ? sprintf("%.1f", [last / 1000]) : '-';
-    return sprintf('%-*s\t%d\t%d\t%s', [hostnameLen, hop, sent, rcvd, l]);
+    String l = (data.last > 0) ? sprintf("%.1f", [data.last / 1000]) : '-';
+    return sprintf('%-*s\t%d\t%d\t%s', [hostnameLen, hop, data.sent, data.rcvd, l]);
   }
 }
 
