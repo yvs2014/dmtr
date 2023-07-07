@@ -1,5 +1,5 @@
 
-import 'package:dart_ping/dart_ping.dart';
+import 'package:dping4mtr/dping4mtr.dart';
 import 'common.dart';
 
 const waitTimeout = 1; // in seconds

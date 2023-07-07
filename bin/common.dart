@@ -1,7 +1,7 @@
 
 import 'dart:io' show Platform;
 import 'package:sprintf/sprintf.dart';
-import 'package:dart_ping/dart_ping.dart';
+import 'package:dping4mtr/dping4mtr.dart';
 
 const hostnameLen = 30;
 typedef TsUsec = ({int sec, int usec}); // timestamp: sec, usec
