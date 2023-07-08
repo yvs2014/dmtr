@@ -1,7 +1,7 @@
 
 import 'dart:io' show exit;
 import 'package:sprintf/sprintf.dart';
-import 'package:args/args.dart';
+import 'package:args/args.dart' show ArgParser;
 
 import 'common.dart';
 import 'pinger.dart';
@@ -41,7 +41,7 @@ main(List<String> args) async {
     if (parsed['numeric'] != null) dns = parsed['numeric'];
     if (parsed['report'] != null) {
       report = parsed['report'];
-      count ??= reportCycles;
+      if (report ?? false) count ??= reportCycles;
     }
     if (parsed['help'] ?? false) usage(myname, parser.usage, 4);
     if (parsed.rest.isEmpty) throw FormatException("Target HOST is not set");
@@ -54,7 +54,7 @@ main(List<String> args) async {
   bool many = target.length > 1;
   for (var i = 0; i < target.length; i++) { // note: one by one, not async
     // Run main loop
-    await pingHops(host: target[i], count: count, timeout: timeout, dns: dns ?? dnsResolve);
+    await pingHops(host: target[i], count: count, timeout: timeout, dns: dns ?? dnsResolve, silent: report ?? false);
     // Print report if necessary
     if (report ?? false) printReport(stat: stat, hops: hops, target: many ? target[i] : null, last: i == (target.length - 1));
   }

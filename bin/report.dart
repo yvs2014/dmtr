@@ -1,5 +1,5 @@
 
-import 'package:sprintf/sprintf.dart';
+import 'package:sprintf/sprintf.dart' show sprintf;
 import 'common.dart';
 
 const reportCycles = 10; // for upper layers
