@@ -38,7 +38,7 @@ main(List<String> args) async {
       timeout = int.parse(parsed['wait']);
       if (timeout <= 0) throw FormatException("Timeout($timeout) in seconds must be great than 0");
     }
-    if (parsed['numeric'] != null) dns = parsed['numeric'];
+    if (parsed['numeric'] != null) dns = !parsed['numeric'];
     if (parsed['report'] != null) {
       report = parsed['report'];
       if (report ?? false) count ??= reportCycles;

@@ -1,21 +1,24 @@
 
 import 'package:sprintf/sprintf.dart' show sprintf;
-import 'package:ncurses/ncurses.dart' show defaultLibrary, Screen, Window, Position, CursorVisibility;
+import 'package:ncurses/ncurses.dart' show defaultLibrary, Screen, Window, Position, CursorVisibility, /*lines,*/ columns;
 import 'common.dart';
 
 late Screen _screen;
 late Window _window;
 
-final hopHeader = sprintf('%-*s\t%s\t%s\t%s', [hostnameLen, 'Host', 'Sent', 'Rcvd', 'Last']);
 String? _host;
+late int _indent;
+late int _hostmaxlen;
 
-void openDisplay() {
+void openDisplay({int indent = 4}) {
   _screen = Screen();
   _screen.raw = true;
   _screen.cursorVisibility = CursorVisibility.invisible;
   _screen.echo = false;
   _screen.window.noDelay = true;
   _window = _screen.window;
+  _indent = indent;
+  _hostmaxlen = columns - (indent + statMax + 2);
 }
 
 void closeDisplay() { _window.addString('\n');  _window.refresh(); _screen.endWin(); }
@@ -27,15 +30,15 @@ String? getKey() {
   return (c > 0) ? String.fromCharCode(c) : null;
 }
 
-void showStat({int indent = 4, String? header, required List<Hop> stat, required int hops, String? target}) {
+void showStat({required List<Hop> stat, required int hops, String? target}) {
   if (hops > 0) {
     _window.clear();
-    int y = 0;
+    int y = 0, w = _hostmaxlen;
     if (_host != null) _window.addString(at: Position(0, y++), 'Ping $_host');
-    _window.addString(at: Position(0, y++), sprintf('%*s%s', [indent, '', header ?? hopHeader]));
+    _window.addString(at: Position(0, y++), sprintf('%*s%-*.*s %s', [_indent, '', w, w, hostTitle, statTitle]));
     for (int i = 0; i < hops; i++) {
       String no = sprintf('%2d. ', [i + 1]);
-      _window.addString(at: Position(0, y++), sprintf('%*s%s', [indent, no, (stat[i].data.sent > 0) ? stat[i] : '']));
+      _window.addString(at: Position(0, y++), sprintf('%*s%-*.*s %s', [_indent, no, w, w, stat[i].lpart, stat[i].rpart]));
     }
     _window.refresh();
   }

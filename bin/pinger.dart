@@ -84,7 +84,9 @@ Future <void> _readEvents(int ttl, var stream) async {
 }
 
 
-HopData _incHopDataSent(int ndx) => (sent: stat[ndx].data.sent + 1, rcvd: stat[ndx].data.rcvd, last: stat[ndx].data.last);
+HopData _incHopDataSent(int ndx) => (sent: stat[ndx].data.sent + 1, rcvd: stat[ndx].data.rcvd,
+  last: stat[ndx].data.last, best: stat[ndx].data.best, wrst: stat[ndx].data.wrst,
+  avg: stat[ndx].data.avg, jttr: stat[ndx].data.jttr);
 
 void _setHopData(int ndx, PingResponse re) {
   int? last;
@@ -99,7 +101,23 @@ void _setHopData(int ndx, PingResponse re) {
   if (re.ip != null) stat[ndx].addr = re.ip;
   if (re.name != null) stat[ndx].name = re.name;
   if (re.seq != null) stat[ndx].seq = re.seq!; // marker of stats
-  stat[ndx].data = (sent: stat[ndx].data.sent + 1, rcvd: stat[ndx].data.rcvd + 1, last: last ?? stat[ndx].data.last);
+  int sent = stat[ndx].data.sent + 1;
+  int rcvd = stat[ndx].data.rcvd + 1;
+  int best = stat[ndx].data.best;
+  int wrst = stat[ndx].data.wrst;
+  double avg  = stat[ndx].data.avg;
+  double jttr = stat[ndx].data.jttr;
+  if (last != null) {
+    if (last > wrst) wrst = last;
+    if ((last < best) || (best == 0)) best = last;
+    avg += (last - avg) / rcvd;
+    if ((stat[ndx].prtt != null) && (rcvd > 1)) {
+      int dj = (last - stat[ndx].prtt!).abs();
+      jttr += (dj - jttr) / (rcvd - 1);
+    }
+    stat[ndx].prtt = last;
+  }
+  stat[ndx].data = (sent: sent, rcvd: rcvd, last: last ?? stat[ndx].data.last, best: best, wrst: wrst, avg: avg, jttr: jttr);
 }
 
 
