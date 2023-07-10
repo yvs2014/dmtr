@@ -1,5 +1,4 @@
 
-import 'dart:io' show sleep;
 import 'dart:async' show Timer;
 import 'package:dping4mtr/dping4mtr.dart' show Ping, PingResponse, ErrorType, ReStatus;
 import 'common.dart';
@@ -25,8 +24,11 @@ Future <void> runDisplay({int timeout = waitTimeout}) async {
       String? c = getKey();
       if (c?.isNotEmpty ?? false) {
         switch (c) {
-          case 'q': for (int i = 0; i < maxTtl; i++) { stat[i].ping?.stop(); }
-//          default: print("key='$c'");
+          case 'q':
+            timer.cancel();
+            for (int i = 0; i < maxTtl; i++) { stat[i].ping?.stop(); }
+          case 'p': print('not yet: pause mode'); // TODO later
+          case 'n': print('not yet: toggle dns'); // TODO later
         }
       }
       showStat(stat: stat, hops: hops);
@@ -34,9 +36,13 @@ Future <void> runDisplay({int timeout = waitTimeout}) async {
   });
 }
 
-Future <void> pingHops({required String host, int? count, int timeout = waitTimeout, bool dns = dnsResolve, bool silent = false}) async {
+Future<bool> pingHops({required String host, int? count, int timeout = waitTimeout, bool dns = dnsResolve, bool silent = false}) async {
   resetStat();
-  if (!silent) { openDisplay(); setDisplayHost(host); runDisplay(); }
+  if (!silent) {
+    if (!openDisplay()) return false;
+    setDisplayHost(host);
+    runDisplay();
+  }
   List<Future<void>> readers = [];
   for (int i = 0; i < maxTtl; i++) {
     int ttl = i + 1;
@@ -44,7 +50,8 @@ Future <void> pingHops({required String host, int? count, int timeout = waitTime
     var p = stat[i].ping;
     if (p != null) readers.add(_readEvents(ttl, p.stream));
   }
-  await Future.wait(readers).then((_) { if (!silent) { _stopFlag = true; closeDisplay(); sleep(Duration(seconds: timeout)); }});
+  await Future.wait(readers).then((_) { if (!silent) closeDisplay(); });
+  return true;
 }
 
 

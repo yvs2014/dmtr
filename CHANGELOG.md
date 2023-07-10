@@ -1,9 +1,12 @@
-## 0.0.3
+## 0.1.3
+- add minimal libncurses wrapper
+
+## 0.1.2
 - basic ncurses mode
 
-## 0.0.2
+## 0.1.1
 - basic report mode
 
-## 0.0.1
+## 0.1.0
 
 - initial version
