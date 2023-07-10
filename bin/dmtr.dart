@@ -15,11 +15,7 @@ usage(String name, help, int indent) {
 
 
 main(List<String> args) async {
-  int? count;
-  int timeout = waitTimeout;
-  bool? dns;
-  bool? report;
-  late List<String> target;
+  late List<String> targets;
 
   // Parse arguments
   final parser = ArgParser();
@@ -32,31 +28,31 @@ main(List<String> args) async {
     final parsed = parser.parse(args);
     if (parsed['count'] != null) {
       count = int.parse(parsed['count']);
-      if (count <= 0) throw FormatException("Number($count) of cycles must be great than 0");
+      if ((count ?? 1) <= 0) throw FormatException("Number($count) of cycles must be great than 0");
     }
     if (parsed['wait'] != null) {
       timeout = int.parse(parsed['wait']);
       if (timeout <= 0) throw FormatException("Timeout($timeout) in seconds must be great than 0");
     }
-    if (parsed['numeric'] != null) dns = !parsed['numeric'];
+    if (parsed['numeric'] != null) dnsEnable = !parsed['numeric'];
     if (parsed['report'] != null) {
-      report = parsed['report'];
-      if (report ?? false) count ??= reportCycles;
+      reportEnable = parsed['report'];
+      if (reportEnable) count ??= reportCycles;
     }
     if (parsed['help'] ?? false) usage(myname, parser.usage, 4);
     if (parsed.rest.isEmpty) throw FormatException("Target HOST is not set");
-    target = parsed.rest;
+    targets = parsed.rest;
   } catch(e) {
     print("$myname: ${e.toString().split('.')[0]}\n");
     usage(myname, parser.usage, 4);
   }
 
-  bool many = target.length > 1;
-  for (var i = 0; i < target.length; i++) { // note: one by one, not async
+  bool many = targets.length > 1;
+  for (var i = 0; i < targets.length; i++) { // note: one by one, not async
     // Run main loop
-    await pingHops(host: target[i], count: count, timeout: timeout, dns: dns ?? dnsResolve, silent: report ?? false);
+    await pingHops(targets[i]);
     // Print report if necessary
-    if (report ?? false) printReport(stat: stat, hops: hops, target: many ? target[i] : null, last: i == (target.length - 1));
+    if (reportEnable) printReport(stat: stat, hops: hops, target: many ? targets[i] : null, last: i == (targets.length - 1));
   }
 
 }

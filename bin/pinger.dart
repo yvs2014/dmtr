@@ -1,34 +1,35 @@
 
+import 'dart:io' show sleep;
 import 'dart:async' show Timer;
 import 'package:dping4mtr/dping4mtr.dart' show Ping, PingResponse, ErrorType, ReStatus;
 import 'common.dart';
 import 'dcurses.dart';
 
-const waitTimeout = 1; // in seconds
-const dnsResolve = true;
-const maxTtl = 30;
+const _maxTtl = 30;
 
 late int hops;
 late List<Hop> stat;
 bool _stopFlag = false;
 
 void resetStat() {
-  hops = maxTtl;
-  stat = List<Hop>.generate(maxTtl, (_) => Hop());
+  hops = _maxTtl;
+  stat = List<Hop>.generate(_maxTtl, (_) => Hop());
 }
 
-Future <void> runDisplay({int timeout = waitTimeout}) async {
+Future <void> runDisplay() async {
   Timer.periodic(Duration(seconds: timeout), (timer) {
     if (_stopFlag) { timer.cancel(); }
     else {
       String? c = getKey();
       if (c?.isNotEmpty ?? false) {
         switch (c) {
+          case 'f': print('not yet: first ttl'); // TODO later
+          case 'n': print('not yet: toggle dns'); // TODO later
+          case 'p': print('not yet: pause mode'); // TODO later
           case 'q':
             timer.cancel();
-            for (int i = 0; i < maxTtl; i++) { stat[i].ping?.stop(); }
-          case 'p': print('not yet: pause mode'); // TODO later
-          case 'n': print('not yet: toggle dns'); // TODO later
+            for (int i = 0; i < _maxTtl; i++) { stat[i].ping?.stop(); }
+          case 'r': print('not yet: restart stats'); // TODO later
         }
       }
       showStat(stat: stat, hops: hops);
@@ -36,21 +37,21 @@ Future <void> runDisplay({int timeout = waitTimeout}) async {
   });
 }
 
-Future<bool> pingHops({required String host, int? count, int timeout = waitTimeout, bool dns = dnsResolve, bool silent = false}) async {
+Future<bool> pingHops(String host) async {
   resetStat();
-  if (!silent) {
+  if (!reportEnable) {
     if (!openDisplay()) return false;
     setDisplayHost(host);
     runDisplay();
   }
   List<Future<void>> readers = [];
-  for (int i = 0; i < maxTtl; i++) {
+  for (int i = 0; i < _maxTtl; i++) {
     int ttl = i + 1;
-    stat[i].ping = Ping(host, ttl: ttl, timing: true, count: count, timeout: timeout, dns: dns);
+    stat[i].ping = Ping(host, ttl: ttl, timing: true, count: count, timeout: timeout, dns: dnsEnable);
     var p = stat[i].ping;
     if (p != null) readers.add(_readEvents(ttl, p.stream));
   }
-  await Future.wait(readers).then((_) { if (!silent) closeDisplay(); });
+  await Future.wait(readers).then((_) { if (!reportEnable) { _stopFlag = true; closeDisplay(); sleep(Duration(seconds: timeout)); }});
   return true;
 }
 
@@ -63,7 +64,7 @@ Future <void> _readEvents(int ttl, var stream) async {
         if (hops > 0) {
            print('$myname: ${ev.error}');
       	   hops = 0;
-           for (int i = hops; i < maxTtl; i++) { stat[i].ping?.stop(); }
+           for (int i = hops; i < _maxTtl; i++) { stat[i].ping?.stop(); }
         }
         return;
       }
@@ -75,7 +76,7 @@ Future <void> _readEvents(int ttl, var stream) async {
         case ReStatus.success:
           if ((re.ttl != null) && (hops > ttl)) {
             hops = ttl; // stop pings at this ttl
-            for (int i = hops; i < maxTtl; i++) { stat[i].ping?.stop(); }
+            for (int i = hops; i < _maxTtl; i++) { stat[i].ping?.stop(); }
           }
           _setHopData(ndx, re);
         case ReStatus.discard:
@@ -105,8 +106,8 @@ void _setHopData(int ndx, PingResponse re) {
       last = ((tu.sec - stat[ndx].ts!.sec) * 1000000 + (tu.usec - stat[ndx].ts!.usec)).toInt();
     }
   }
-  if (re.ip != null) stat[ndx].addr = re.ip;
-  if (re.name != null) stat[ndx].name = re.name;
+  if (re.ip != null) _addAddrAt(ndx, re.ip!);
+  if (re.name != null) _addNameAt(ndx, re.name!);
   if (re.seq != null) stat[ndx].seq = re.seq!; // marker of stats
   int sent = stat[ndx].data.sent + 1;
   int rcvd = stat[ndx].data.rcvd + 1;
@@ -119,8 +120,8 @@ void _setHopData(int ndx, PingResponse re) {
     if ((last < best) || (best == 0)) best = last;
     avg += (last - avg) / rcvd;
     if ((stat[ndx].prtt != null) && (rcvd > 1)) {
-      int dj = (last - stat[ndx].prtt!).abs();
-      jttr += (dj - jttr) / (rcvd - 1);
+      int j = (last - stat[ndx].prtt!).abs();
+      jttr += (j - jttr) / (rcvd - 1);
     }
     stat[ndx].prtt = last;
   }
@@ -134,5 +135,16 @@ TsUsec _parseTs(String s) {
   if (a.length == 2) { sec = int.parse(a[0]); usec = int.parse(a[1]); }
   if (a.length == 1) sec = int.parse(a[0]);
   return (sec: sec, usec: usec);
+}
+
+void _addAddrAt(int ndx, String addr) {
+  stat[ndx].addr = addr;
+  if (addr.length > maxHostaddr) maxHostaddr = addr.length;
+  if (maxHostaddr > maxHostname) maxHostname = maxHostaddr;
+}
+
+void _addNameAt(int ndx, String name) {
+  stat[ndx].name = name;
+  if (name.length > maxHostname) maxHostname = name.length;
 }
 
