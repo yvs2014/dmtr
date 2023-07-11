@@ -11,6 +11,7 @@ printReport({required List<Hop> stat, required int hops, String? target, bool la
     for (int i = 0; i < hops; i++) {
       String no = sprintf('%2d. ', [i + 1]);
       print(sprintf('%*s%s', [indent, no, (stat[i].data.sent > 0) ? stat[i] : '']));
+      for (int j = 1; j < stat[i].addr.length; j++) { print(sprintf('%*s%s', [indent, '', stat[i].lpart(j)])); }
     }
   }
   if (!last) print('');

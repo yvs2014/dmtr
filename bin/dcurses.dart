@@ -42,7 +42,13 @@ void showStat({required List<Hop> stat, required int hops, String? target}) {
     attroff(aBold);
     for (int i = 0; i < hops; i++) {
       String no = sprintf('%2d. ', [i + 1]);
-      mvaddstr(y++, 0, sprintf('%*s%-*.*s %s', [_indent, no, w, w, stat[i].lpart, stat[i].rpart]));
+      String addr = stat[i].addr.isNotEmpty ? stat[i].lpart(0) : '';
+      mvaddstr(y++, 0, sprintf('%*s%-*.*s %s', [_indent, no, w, w, addr, stat[i].rpart]));
+      if (stat[i].addr.length > 1) {
+        for (int j = 1; j < stat[i].addr.length; j++) {
+          mvaddstr(y++, 0, sprintf('%*s%s', [_indent, '', stat[i].lpart(j)]));
+        }
+      }
     }
     refresh();
   }

@@ -22,28 +22,29 @@ bool reportEnable = false; // -r
 int timeout = 1;           // -w seconds
 int? count;                // -c count
 
+const maxNamesPerHop = 5;
 
 class Hop {
   HopData data = (sent: 0, rcvd: 0, last: 0, best: 0, wrst: 0, avg: 0, jttr: 0);
-  String? addr;
-  String? name;
+  List<String?> addr = [];
+  List<String?> name = [];
   Ping? ping;
   int seq = -1; // a marker to avoid dups at calculation of 'sent'
   TsUsec? ts;   // timestamp of timeouted response
   int? prtt;    // previous RTT
-  String get host => dnsEnable ? ((name ?? addr) ?? '') : (addr ?? '');
+  String host(int n) => dnsEnable ? ((name[n] ?? addr[n]) ?? '') : (addr[n] ?? '');
   String get msec => (data.rcvd > 0) ? prfmt(data.last / 1000) : '';
   String get loss => (data.sent > 0) ? '${prfmt((data.sent - data.rcvd) / data.sent * 100)}%' : '';
   String get best => (data.rcvd > 0) ? prfmt(data.best / 1000) : '';
   String get wrst => (data.rcvd > 0) ? prfmt(data.wrst / 1000) : '';
   String get avg => (data.rcvd > 0) ? prfmt(data.avg / 1000) : '';
   String get jttr => (data.rcvd > 1) ? prfmt(data.jttr / 1000) : '';
-  String get lpart => host;
+  String lpart(int n) => (n < addr.length) ? host(n) : '';
   String get rpart => (data.sent > 0) ? sprintf(_statfmt, [loss, '${data.sent}', msec, best, wrst, avg, jttr]) : '';
   @override
   String toString() {
     int l = dnsEnable ? maxHostname : maxHostaddr;
-    return sprintf('%-*.*s %s', [l, l, lpart, rpart]);
+    return sprintf('%-*.*s %s', [l, l, lpart(0), rpart]);
   }
 }
 

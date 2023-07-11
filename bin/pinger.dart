@@ -106,8 +106,7 @@ void _setHopData(int ndx, PingResponse re) {
       last = ((tu.sec - stat[ndx].ts!.sec) * 1000000 + (tu.usec - stat[ndx].ts!.usec)).toInt();
     }
   }
-  if (re.ip != null) _addAddrAt(ndx, re.ip!);
-  if (re.name != null) _addNameAt(ndx, re.name!);
+  if (re.ip != null) _addAddrNameAt(ndx, re.ip!, re.name);
   if (re.seq != null) stat[ndx].seq = re.seq!; // marker of stats
   int sent = stat[ndx].data.sent + 1;
   int rcvd = stat[ndx].data.rcvd + 1;
@@ -137,14 +136,18 @@ TsUsec _parseTs(String s) {
   return (sec: sec, usec: usec);
 }
 
-void _addAddrAt(int ndx, String addr) {
-  stat[ndx].addr = addr;
-  if (addr.length > maxHostaddr) maxHostaddr = addr.length;
-  if (maxHostaddr > maxHostname) maxHostname = maxHostaddr;
-}
-
-void _addNameAt(int ndx, String name) {
-  stat[ndx].name = name;
-  if (name.length > maxHostname) maxHostname = name.length;
+void _addAddrNameAt(int ndx, String addr, String? name) {
+  final an = stat[ndx].addr.indexWhere((a) => ((a != null) ? (a == addr) : false));
+  if (an < 0) { // new addr
+    if (stat[ndx].addr.length >= maxNamesPerHop) { stat[ndx].addr.removeAt(0); stat[ndx].name.removeAt(0); }
+    stat[ndx].addr.add(addr);
+    stat[ndx].name.add(name);
+    if (addr.length > maxHostaddr) maxHostaddr = addr.length;
+    if (maxHostaddr > maxHostname) maxHostname = maxHostaddr;
+    if ((name != null) && (name.length > maxHostname)) maxHostname = name.length;
+  } else if ((stat[ndx].name[an] == null) && (name != null)) { // if name is not set before
+    stat[ndx].name[an] = name;
+    if (name.length > maxHostname) maxHostname = name.length;
+  }
 }
 
