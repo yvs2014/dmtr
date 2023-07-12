@@ -5,16 +5,10 @@ import 'common.dart';
 
 late Voidptr _win;
 
-String? _host;
-late int _indent;
-late int _hostmaxlen;
-
-bool openDisplay({int indent = 4}) {
+bool openDisplay() {
   _win = initscr();
   bool rc = (_win != nilptr);
   if (rc) {
-    _indent = indent;
-    _hostmaxlen = cols - (indent + statMax + 2);
     cursset(0); // hide cursor
     raw();
     noecho();
@@ -25,28 +19,45 @@ bool openDisplay({int indent = 4}) {
 
 void closeDisplay() { addstr('\n'); refresh(); endwin(); }
 
-void setDisplayHost(String host) { _host = host; }
-
 String? getKey() {
   int c = getch();
   return (c > 0) ? String.fromCharCode(c) : null;
 }
 
-void showStat({required List<Hop> stat, required int hops, String? target}) {
+int _printTitle(int y0, int w) {
+  int y = y0;
+  attron(aBold);
+  mvaddstr(y++, 0, sprintf('%*s', [(cols + (title?.length ?? 0)) ~/ 2, title ?? '']));
+  attroff(aBold);
+  mvaddstr(y, 0, ' Keys: ');
+  attron(aBold); addstr('H'); attroff(aBold); addstr('elp ');
+  if (!numeric) { attron(aBold); addstr('D'); attroff(aBold); addstr('ns '); }
+  attron(aBold); addstr('T'); attroff(aBold); addstr('tl ');
+  attron(aBold); addstr('P'); attroff(aBold); addstr('ause ');
+  attron(aBold); addstr('R'); attroff(aBold); addstr('eset ');
+  attron(aBold); addstr('Q'); attroff(aBold); addstr('uit');
+  String now = '${DateTime.now()}';
+  now = now.substring(0, now.indexOf('.'));
+  mvaddstr(y++, cols - (now.length + 1), now);
+  y++;
+  attron(aBold);
+  mvaddstr(y++, 0, sprintf('%*s%-*.*s %s', [lindent, '', w, w, hostTitle, statTitle]));
+  attroff(aBold);
+  return y - y0;
+}
+
+void showStat(List<Hop> stat, int hops, String host) {
   if (hops > 0) {
     clear();
-    int y = 0, w = _hostmaxlen;
-    if (_host != null) mvaddstr(y++, 0, 'Ping $_host');
-    attron(aBold);
-    mvaddstr(y++, 0, sprintf('%*s%-*.*s %s', [_indent, '', w, w, hostTitle, statTitle]));
-    attroff(aBold);
+    int w = cols - (lindent + statMax + 2);
+    int y = _printTitle(0, w);
     for (int i = 0; i < hops; i++) {
       String no = sprintf('%2d. ', [i + 1]);
       String addr = stat[i].addr.isNotEmpty ? stat[i].lpart(0) : '';
-      mvaddstr(y++, 0, sprintf('%*s%-*.*s %s', [_indent, no, w, w, addr, stat[i].rpart]));
+      mvaddstr(y++, 0, sprintf('%*s%-*.*s %s', [lindent, no, w, w, addr, stat[i].rpart]));
       if (stat[i].addr.length > 1) {
         for (int j = 1; j < stat[i].addr.length; j++) {
-          mvaddstr(y++, 0, sprintf('%*s%s', [_indent, '', stat[i].lpart(j)]));
+          mvaddstr(y++, 0, sprintf('%*s%s', [lindent, '', stat[i].lpart(j)]));
         }
       }
     }

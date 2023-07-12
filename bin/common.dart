@@ -5,22 +5,26 @@ import 'package:dping4mtr/dping4mtr.dart' show Ping;
 
 typedef TsUsec = ({int sec, int usec}); // timestamp: sec, usec
 final myname = (Platform.executable == 'dart') ? 'dmtr' : Platform.executable;
+final version = '0.1.4';
+String? optstr;
+String? title;
 
 // as a record to be synced
 typedef HopData = ({int sent, int rcvd, int last, int best, int wrst, double avg, double jttr}); // last,best,wrst,avg in usec
 
-final hostTitle = 'Host'; // left(host) part of output
+final hostTitle = 'Hops'; // left(host) part of output
 const _statfmt = '%-4s %-5s %-4s %-4s %-4s  %-4s %-4s';
 final statTitle = sprintf(_statfmt, ['Loss', 'Sent', 'Last', 'Best', 'Wrst', 'Avrg', 'Jttr']);
 final statMax = sprintf(_statfmt, List<String>.filled(7, '')).length;
-int maxHostname = 0;
-int maxHostaddr = 0;
+int maxHostaddr = 0, maxHostname = 0;
+const lindent = 4; // lpart's indent
 
 // options can be reset with program args, below are defaults
 bool dnsEnable = true;     // -n
 bool reportEnable = false; // -r
 int timeout = 1;           // -w seconds
 int? count;                // -c count
+bool numeric = false;      // not toggled dnsEnable
 
 const maxNamesPerHop = 5;
 
@@ -51,4 +55,5 @@ class Hop {
 const floatUpto = 10;
 const twoDigitsUpto = 0.1;
 String prfmt(double v) => sprintf('%.*f', [((v > 0) && (v < floatUpto)) ? ((v < twoDigitsUpto) ? 2 : 1) : 0, v]);
+void setTitle(String host) { title = ['$myname-$version', optstr, host].where((a) => (a != null) && a.isNotEmpty).join(' '); }
 

@@ -9,56 +9,51 @@ const _maxTtl = 30;
 
 late int hops;
 late List<Hop> stat;
-bool _stopFlag = false;
 
 void resetStat() {
   hops = _maxTtl;
   stat = List<Hop>.generate(_maxTtl, (_) => Hop());
+  maxHostaddr = maxHostname = 0;
 }
 
-Future <void> runDisplay() async {
-  Timer.periodic(Duration(seconds: timeout), (timer) {
-    if (_stopFlag) { timer.cancel(); }
-    else {
-      String? c = getKey();
-      if (c?.isNotEmpty ?? false) {
-        switch (c) {
-          case 'f': print('not yet: first ttl'); // TODO later
-          case 'n': print('not yet: toggle dns'); // TODO later
-          case 'p': print('not yet: pause mode'); // TODO later
-          case 'q':
-            timer.cancel();
-            for (int i = 0; i < _maxTtl; i++) { stat[i].ping?.stop(); }
-          case 'r': print('not yet: restart stats'); // TODO later
-        }
-      }
-      showStat(stat: stat, hops: hops);
+void _keyActions() {
+  String? c = getKey();
+  if (c?.isNotEmpty ?? false) {
+    switch (c) {
+      case 'f': print('not yet: first ttl'); // TODO later
+      case 'n': if (!numeric) print('not yet: toggle dns'); // TODO later
+      case 'p': print('not yet: pause mode'); // TODO later
+      case 'q':
+        for (int i = 0; i < _maxTtl; i++) { stat[i].ping?.stop(); }
+      case 'r': print('not yet: restart stats'); // TODO later
     }
-  });
+  }
 }
 
-Future<bool> pingHops(String host) async {
+Future<void> pingHops(String host) async {
   resetStat();
-  if (!reportEnable) {
-    if (!openDisplay()) return false;
-    setDisplayHost(host);
-    runDisplay();
-  }
-  List<Future<void>> readers = [];
+  List<Future<void>> input = [];
+  Timer? timer;
+  if (!reportEnable) timer = Timer.periodic(Duration(seconds: timeout), (_) { showStat(stat, hops, host); _keyActions(); });
   for (int i = 0; i < _maxTtl; i++) {
     int ttl = i + 1;
     stat[i].ping = Ping(host, ttl: ttl, timing: true, count: count, timeout: timeout, dns: dnsEnable);
     var p = stat[i].ping;
-    if (p != null) readers.add(_readEvents(ttl, p.stream));
+    if (p != null) input.add(_readEvents(ttl, p.stream));
   }
-  await Future.wait(readers).then((_) { if (!reportEnable) { _stopFlag = true; closeDisplay(); sleep(Duration(seconds: timeout)); }});
-  return true;
+  await Future.wait(input);
+  if (!reportEnable) {
+    sleep(Duration(milliseconds: timeout * 1000 ~/ 2));
+    timer?.cancel();
+    showStat(stat, hops, host);
+    sleep(Duration(milliseconds: 500)); // 0.5sec enough to spot last updates
+  }
 }
 
 
-Future <void> _readEvents(int ttl, var stream) async {
+Future<void> _readEvents(int ttl, var stream) async {
   await for (final ev in stream) {
-//print("got[ttl=$ttl] $ev"); // TMP
+//print("${DateTime.now()} got[ttl=$ttl] $ev"); // TMP
     if (ev.error != null) { // got error
       if (ev.error.error == ErrorType.unknownHost) { // unknown host: stop all pings
         if (hops > 0) {

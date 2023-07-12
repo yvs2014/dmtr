@@ -6,6 +6,7 @@ import 'package:args/args.dart' show ArgParser;
 import 'common.dart';
 import 'pinger.dart';
 import 'report.dart';
+import 'dcurses.dart';
 
 usage(String name, help, int indent) {
   final br = sprintf('\n%*s', [indent, '']);
@@ -15,7 +16,7 @@ usage(String name, help, int indent) {
 
 
 main(List<String> args) async {
-  late List<String> targets;
+  List<String> targets = [];
 
   // Parse arguments
   final parser = ArgParser();
@@ -34,26 +35,31 @@ main(List<String> args) async {
       timeout = int.parse(parsed['wait']);
       if (timeout <= 0) throw FormatException("Timeout($timeout) in seconds must be great than 0");
     }
-    if (parsed['numeric'] != null) dnsEnable = !parsed['numeric'];
+    if (parsed['numeric'] != null) { numeric = parsed['numeric']; dnsEnable = !numeric; }
     if (parsed['report'] != null) {
       reportEnable = parsed['report'];
       if (reportEnable) count ??= reportCycles;
     }
     if (parsed['help'] ?? false) usage(myname, parser.usage, 4);
     if (parsed.rest.isEmpty) throw FormatException("Target HOST is not set");
+    optstr = args.where((a) => !parsed.rest.contains(a)).join(' ');
     targets = parsed.rest;
   } catch(e) {
     print("$myname: ${e.toString().split('.')[0]}\n");
     usage(myname, parser.usage, 4);
   }
 
-  bool many = targets.length > 1;
+  if (!reportEnable && !openDisplay()) return -1;
   for (var i = 0; i < targets.length; i++) { // note: one by one, not async
-    // Run main loop
-    await pingHops(targets[i]);
-    // Print report if necessary
-    if (reportEnable) printReport(stat: stat, hops: hops, target: many ? targets[i] : null, last: i == (targets.length - 1));
+    setTitle(targets[i]);
+    await pingHops(targets[i]); // Run main loop
+    if (reportEnable) { // Print report if necessary
+      if (i != 0) print('');
+      String now = '${DateTime.now()}';
+      print("[${now.substring(0, now.indexOf('.'))}] $title");
+      printReport(stat, hops);
+    }
   }
-
+  if (!reportEnable) closeDisplay();
 }
 

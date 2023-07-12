@@ -1,3 +1,7 @@
+## 0.1.4
+- add output header
+- rearrange timer cancel
+
 ## 0.1.3
 - add minimal libncurses wrapper
 
