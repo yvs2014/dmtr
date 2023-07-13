@@ -38,7 +38,9 @@ int cursset(int visibility) => _cursset(visibility);
 int get lines => _lines.value;
 int get cols => _cols.value;
 int getch() => _getch();
-int addch(int ch) => _addch(ch);
+int clrtoeol() => _clrtoeol();
+int move(int y, int x) => _move(y, x);
+//int addch(int ch) => _addch(ch);
 int addstr(String str) {
   final cstr = str.toNativeUtf8().cast<Char>();
   final int rc = _addstr(cstr);
@@ -51,6 +53,7 @@ int mvaddstr(int y, int x, String str) {
   calloc.free(cstr);
   return rc;
 }
+
 
 // FFI bindings
 final _initscr = _libncurses
@@ -94,9 +97,15 @@ final Intptr _cols = _libncurses.lookup<Int>('COLS');
 final _getch = _libncurses
   .lookup<NativeFunction<Int Function()>>('getch')
   .asFunction<int Function()>();
-final _addch = _libncurses
-  .lookup<NativeFunction<Int Function(UnsignedInt)>>('addch')
-  .asFunction<int Function(int)>();
+final _clrtoeol = _libncurses
+  .lookup<NativeFunction<Int Function()>>('clrtoeol')
+  .asFunction<int Function()>();
+final _move = _libncurses
+  .lookup<NativeFunction<Int Function(Int, Int)>>('move')
+  .asFunction<int Function(int, int)>();
+//final _addch = _libncurses
+//  .lookup<NativeFunction<Int Function(UnsignedInt)>>('addch')
+//  .asFunction<int Function(int)>();
 final _addstr = _libncurses
   .lookup<NativeFunction<Int Function(Charptr)>>('addstr')
   .asFunction<int Function(Charptr)>();

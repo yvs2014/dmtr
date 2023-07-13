@@ -10,31 +10,44 @@ const _maxTtl = 30;
 late int hops;
 late List<Hop> stat;
 
-void resetStat() {
+void resetPings() {
   hops = _maxTtl;
   stat = List<Hop>.generate(_maxTtl, (_) => Hop());
   maxHostaddr = maxHostname = 0;
 }
 
-void _keyActions() {
+void resetStats() {
+  hops = _maxTtl;
+  for (int i = 0; i < hops; i++) {
+    stat[i].data = (sent: 0, rcvd: 0, last: 0, best: 0, wrst: 0, avg: 0, jttr: 0);
+  }
+  maxHostaddr = maxHostname = 0;
+}
+
+bool _postclearNote = false;
+
+void _keyActions(String host) {
+  if (_postclearNote) { addnote = null; _postclearNote = false; }
   String? c = getKey();
   if (c?.isNotEmpty ?? false) {
-    switch (c) {
-      case 'f': print('not yet: first ttl'); // TODO later
-      case 'n': if (!numeric) print('not yet: toggle dns'); // TODO later
-      case 'p': print('not yet: pause mode'); // TODO later
+    switch (c!.toLowerCase()) {
+      case 'd': if (!numeric) dnsEnable = !dnsEnable;
+      case 'h': keyHelp(); showStat(stat, hops, host);
+      case 'p': pause = !pause; addnote = pause ? ': in pause' : null;
       case 'q':
         for (int i = 0; i < _maxTtl; i++) { stat[i].ping?.stop(); }
-      case 'r': print('not yet: restart stats'); // TODO later
+        addnote = ': quitting...';
+      case 'r': resetStats(); addnote = ': resetting...'; _postclearNote = true;
+      case 't': addnote = ': first-ttl not yet'; _postclearNote = true; // TODO later
     }
   }
 }
 
 Future<void> pingHops(String host) async {
-  resetStat();
+  resetPings();
   List<Future<void>> input = [];
   Timer? timer;
-  if (!reportEnable) timer = Timer.periodic(Duration(seconds: timeout), (_) { showStat(stat, hops, host); _keyActions(); });
+  if (!reportEnable) timer = Timer.periodic(Duration(seconds: timeout), (_) { showStat(stat, hops, host); _keyActions(host); });
   for (int i = 0; i < _maxTtl; i++) {
     int ttl = i + 1;
     stat[i].ping = Ping(host, ttl: ttl, timing: true, count: count, timeout: timeout, dns: dnsEnable);

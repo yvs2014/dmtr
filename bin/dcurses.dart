@@ -1,9 +1,21 @@
 
+import 'dart:io' show sleep;
 import 'package:sprintf/sprintf.dart' show sprintf;
 import 'libncurses.dart';
 import 'common.dart';
 
 late Voidptr _win;
+
+typedef _KeyHint = ({String key, String hint});
+List<_KeyHint> _keyhints = [
+  (key: 'help',  hint: 'this help'),
+  (key: 'dns',   hint: 'toggle hostname/ipaddr show (note: on linux it works only in non-numeric mode)'),
+  (key: 'ttl',   hint: 'set first ttl'),
+  (key: 'reset', hint: 'reset stats'),
+  (key: 'pause', hint: 'pause/resume'),
+  (key: 'quit',  hint: 'stop and exit'),
+];
+int _maxHKey = _keyhints.reduce((a, b) { return a.key.length > b.key.length ? a : b; }).key.length;
 
 bool openDisplay() {
   _win = initscr();
@@ -24,40 +36,70 @@ String? getKey() {
   return (c > 0) ? String.fromCharCode(c) : null;
 }
 
-int _printTitle(int y0, int w) {
+void keyHelp() {
+  pause = true;
+  clear();
+  int ind = 2, y = 2, x0 = 1, x = x0 + ind + _maxHKey + 2;
+  mvaddstr(y++, x0, 'Keys:');
+  for (var h in _keyhints) {
+    if (h.key.isNotEmpty) {
+      attron(aBold); mvaddstr(y, x0 + ind, h.key[0]); attroff(aBold);
+      if (h.key.length > 1) addstr(h.key.substring(1));
+      mvaddstr(y++, x, h.hint);
+    }
+  }
+  y++;
+  mvaddstr(y++, x0, 'Press any key to continue ...');
+  refresh();
+  while (getch() < 0) { sleep(Duration(milliseconds: 200)); }
+  pause = false;
+}
+
+int _printTitle(int y0, int w, {bool over = false}) {
   int y = y0;
   attron(aBold);
-  mvaddstr(y++, 0, sprintf('%*s', [(cols + (title?.length ?? 0)) ~/ 2, title ?? '']));
+  List<String?> currtitle = [title];
+  if (numeric != !dnsEnable) currtitle.add('(DNS-${dnsEnable ? "on" : "off"})');
+  if (addnote != null) currtitle.add(addnote);
+  if (over) { move(y, 0); clrtoeol(); }
+  mvaddstr(y++, 0, sprintf('%*s', [(cols + (title?.length ?? 0)) ~/ 2,
+    currtitle.where((a) => (a != null) && a.isNotEmpty).join(' ')]));
+  if (over) { move(y, 0); clrtoeol(); }
   attroff(aBold);
-  mvaddstr(y, 0, ' Keys: ');
-  attron(aBold); addstr('H'); attroff(aBold); addstr('elp ');
-  if (!numeric) { attron(aBold); addstr('D'); attroff(aBold); addstr('ns '); }
-  attron(aBold); addstr('T'); attroff(aBold); addstr('tl ');
-  attron(aBold); addstr('P'); attroff(aBold); addstr('ause ');
-  attron(aBold); addstr('R'); attroff(aBold); addstr('eset ');
-  attron(aBold); addstr('Q'); attroff(aBold); addstr('uit');
+  mvaddstr(y, 1, 'Keys:');
+  for (var h in _keyhints) {
+    if (h.key.isNotEmpty) {
+      attron(aBold); addstr(' ${h.key[0]}'); attroff(aBold);
+      if (h.key.length > 1) addstr(h.key.substring(1));
+    }
+  }
   String now = '${DateTime.now()}';
   now = now.substring(0, now.indexOf('.'));
   mvaddstr(y++, cols - (now.length + 1), now);
-  y++;
-  attron(aBold);
-  mvaddstr(y++, 0, sprintf('%*s%-*.*s %s', [lindent, '', w, w, hostTitle, statTitle]));
-  attroff(aBold);
+  if (!over) {
+    y++;
+    attron(aBold);
+    mvaddstr(y++, 0, sprintf('%*s%-*.*s %s', [lindent, '', w, w, hostTitle, statTitle]));
+    attroff(aBold);
+  }
   return y - y0;
 }
 
 void showStat(List<Hop> stat, int hops, String host) {
   if (hops > 0) {
-    clear();
     int w = cols - (lindent + statMax + 2);
-    int y = _printTitle(0, w);
-    for (int i = 0; i < hops; i++) {
-      String no = sprintf('%2d. ', [i + 1]);
-      String addr = stat[i].addr.isNotEmpty ? stat[i].lpart(0) : '';
-      mvaddstr(y++, 0, sprintf('%*s%-*.*s %s', [lindent, no, w, w, addr, stat[i].rpart]));
-      if (stat[i].addr.length > 1) {
-        for (int j = 1; j < stat[i].addr.length; j++) {
-          mvaddstr(y++, 0, sprintf('%*s%s', [lindent, '', stat[i].lpart(j)]));
+    if (pause) { _printTitle(0, w, over: true); }
+    else {
+      clear();
+      int y = _printTitle(0, w);
+      for (int i = 0; i < hops; i++) {
+        String no = sprintf('%2d. ', [i + 1]);
+        String addr = stat[i].addr.isNotEmpty ? stat[i].lpart(0) : '';
+        mvaddstr(y++, 0, sprintf('%*s%-*.*s %s', [lindent, no, w, w, addr, stat[i].rpart]));
+        if (stat[i].addr.length > 1) {
+          for (int j = 1; j < stat[i].addr.length; j++) {
+            mvaddstr(y++, 0, sprintf('%*s%s', [lindent, '', stat[i].lpart(j)]));
+          }
         }
       }
     }

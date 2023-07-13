@@ -8,6 +8,8 @@ final myname = (Platform.executable == 'dart') ? 'dmtr' : Platform.executable;
 final version = '0.1.4';
 String? optstr;
 String? title;
+bool pause = false;
+String? addnote;
 
 // as a record to be synced
 typedef HopData = ({int sent, int rcvd, int last, int best, int wrst, double avg, double jttr}); // last,best,wrst,avg in usec
