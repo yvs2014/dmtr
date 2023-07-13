@@ -2,8 +2,6 @@
 import 'package:sprintf/sprintf.dart' show sprintf;
 import 'common.dart';
 
-const reportCycles = 10; // for upper layers
-
 printReport(List<Hop> stat, int hops) {
   if (hops > 0) {
     print(sprintf('%*s%-*s %s', [lindent, '', dnsEnable ? maxHostname : maxHostaddr, hostTitle, statTitle]));

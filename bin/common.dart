@@ -24,11 +24,14 @@ const lindent = 4; // lpart's indent
 // options can be reset with program args, below are defaults
 bool dnsEnable = true;     // -n
 bool reportEnable = false; // -r
+bool jsonEnable = false;   // -j
 int timeout = 1;           // -w seconds
 int? count;                // -c count
 bool numeric = false;      // not toggled dnsEnable
-
+bool displayMode = true;   // if neither 'reportEnable' nor 'jsonEnable'
 const maxNamesPerHop = 5;
+const reportCycles = 10;   // for a report in json format and a plain one
+
 
 class Hop {
   HopData data = (sent: 0, rcvd: 0, last: 0, best: 0, wrst: 0, avg: 0, jttr: 0);

@@ -47,7 +47,7 @@ Future<void> pingHops(String host) async {
   resetPings();
   List<Future<void>> input = [];
   Timer? timer;
-  if (!reportEnable) timer = Timer.periodic(Duration(seconds: timeout), (_) { showStat(stat, hops, host); _keyActions(host); });
+  if (displayMode) timer = Timer.periodic(Duration(seconds: timeout), (_) { showStat(stat, hops, host); _keyActions(host); });
   for (int i = 0; i < _maxTtl; i++) {
     int ttl = i + 1;
     stat[i].ping = Ping(host, ttl: ttl, timing: true, count: count, timeout: timeout, dns: dnsEnable);
@@ -55,7 +55,7 @@ Future<void> pingHops(String host) async {
     if (p != null) input.add(_readEvents(ttl, p.stream));
   }
   await Future.wait(input);
-  if (!reportEnable) {
+  if (displayMode) {
     sleep(Duration(milliseconds: timeout * 1000 ~/ 2));
     timer?.cancel();
     showStat(stat, hops, host);
