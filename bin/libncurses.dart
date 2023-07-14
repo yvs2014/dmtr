@@ -13,14 +13,28 @@ const cERR = -1;
 const cAttrShift = 8;
 const aBold = 1 << (13 + cAttrShift);
 
-String get soSuffix {
-  if (Platform.isLinux) return 'so.6';
-  if (Platform.isMacOS) return 'dylib';
-  if (Platform.isWindows) return 'dll';
-  return 'so';
+List<String> get libNames => ['libncurses', 'libncursesw', 'libcurses'];
+
+List<String> get soSuffixes {
+  if (Platform.isLinux) return ['so.6', 'so'];
+  if (Platform.isMacOS) return ['dylib'];
+  if (Platform.isWindows) return ['dll'];
+  return ['so'];
 }
 
-final _libncurses = DynamicLibrary.open('libncurses.$soSuffix');
+DynamicLibrary _dynload(List<String> names, List<String> suffixes) {
+  List errs = [];
+  for (var lib in names) {
+    for (var so in suffixes) {
+      try { return DynamicLibrary.open('$lib.$so'); }
+      catch (e) { errs.add(e); }
+    }
+  }
+  for (var e in errs) { print(e); }
+  throw Exception("No one library can be loaded: ${names.join(', ')}");
+}
+
+final _libncurses = _dynload(libNames, soSuffixes);
 
 // C functions' wrapping
 Voidptr initscr() => _initscr();

@@ -2,7 +2,7 @@
 import 'package:sprintf/sprintf.dart' show sprintf;
 import 'common.dart';
 
-printReport(List<Hop> stat, int hops) {
+void printReport(List<Hop> stat, int hops) {
   if (hops > 0) {
     print(sprintf('%*s%-*s %s', [lindent, '', dnsEnable ? maxHostname : maxHostaddr, hostTitle, statTitle]));
     for (int i = 0; i < hops; i++) {

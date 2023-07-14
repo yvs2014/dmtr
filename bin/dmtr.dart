@@ -10,7 +10,7 @@ import 'report.dart';
 import 'json.dart';
 import 'dcurses.dart';
 
-usage(String name, help, int indent) {
+void usage(String name, help, int indent) {
   final br = sprintf('\n%*s', [indent, '']);
   print("Usage: $name [-hn] [-c cycles] [-w timeout] HOST ...$br${help.replaceAll('\n', br)}");
   exit(-1);
