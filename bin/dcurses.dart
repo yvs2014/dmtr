@@ -10,7 +10,7 @@ typedef _KeyHint = ({String key, String hint});
 List<_KeyHint> _keyhints = [
   (key: 'help',  hint: 'this help'),
   (key: 'dns',   hint: 'toggle hostname/ipaddr show (note: on linux it works only in non-numeric mode)'),
-  (key: 'ttl',   hint: 'set first ttl'),
+  (key: 'ttl',   hint: 'set ttl range in min,max format'),
   (key: 'reset', hint: 'reset stats'),
   (key: 'pause', hint: 'pause/resume'),
   (key: 'quit',  hint: 'stop and exit'),
@@ -99,7 +99,8 @@ void showStat(List<Hop> stat, int hops, String host) {
     else {
       clear();
       int y = printTitle(0, w);
-      for (int i = 0; i < hops; i++) {
+      int end = (hops < endTtl) ? hops : endTtl;
+      for (int i = firstTtl - 1; i < end; i++) {
         String no = sprintf('%2d. ', [i + 1]);
         String addr = stat[i].addr.isNotEmpty ? stat[i].lpart(0) : '';
         mvaddstr(y++, 0, sprintf('%*s%-*.*s %s', [lindent, no, w, w, addr, stat[i].rpart]));

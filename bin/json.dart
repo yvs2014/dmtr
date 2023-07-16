@@ -3,7 +3,8 @@ import 'common.dart';
 
 Map<String, dynamic> getMappedHops(List<Hop> stat, int hops, String host) {
   List<Map<String, dynamic>> all = [];
-  if (hops > 0) for (int i = 0; i < hops; i++) { all.add(_hop2map(stat[i], i + 1)); }
+  int end = (hops < endTtl) ? hops : endTtl;
+  for (int i = firstTtl - 1; i < end; i++) { all.add(_hop2map(stat[i], i + 1)); }
   var map = { 'target': host, 'stats': all };
   if (fail != null) map['fail'] = fail!;
   return map;

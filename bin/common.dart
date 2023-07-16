@@ -5,7 +5,7 @@ import 'sysping.dart' show Ping;
 
 typedef TsUsec = ({int sec, int usec}); // timestamp: sec, usec
 final myname = (Platform.executable == 'dart') ? 'dmtr' : Platform.executable;
-final version = '0.1.4';
+final version = '0.1.6';
 String? optstr;
 String? title;
 bool pause = false;
@@ -21,6 +21,7 @@ final statMax = sprintf(_statfmt, List<String>.filled(7, '')).length;
 int maxHostaddr = 0, maxHostname = 0;
 const lindent = 4; // lpart's indent
 String? fail;      // message if something went wrong (for example 'unknown host')
+const maxTtl = 30; // suppose it's enough for today's internet
 
 // options can be reset with program args, below are defaults
 bool dnsEnable = true;     // -n
@@ -28,6 +29,8 @@ bool reportEnable = false; // -r
 bool jsonEnable = false;   // -j
 int timeout = 1;           // -w seconds
 int? count;                // -c count
+int firstTtl = 1;          // -t minTTL,maxTTL
+int endTtl = maxTtl;       //
 bool numeric = false;      // not toggled dnsEnable
 bool displayMode = true;   // if neither 'reportEnable' nor 'jsonEnable'
 const maxNamesPerHop = 5;

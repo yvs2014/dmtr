@@ -13,7 +13,7 @@ import 'dcurses.dart';
 
 void usage(String name, help, int indent) {
   final br = sprintf('\n%*s', [indent, '']);
-  print("Usage: $name [-hn] [-c cycles] [-w timeout] HOST ...$br${help.replaceAll('\n', br)}");
+  print("Usage: $name [-hn] [-c cycles] [-t [minTTL][,maxTTL]] [-w timeout] HOST ...$br${help.replaceAll('\n', br)}");
   exit(-1);
 }
 
@@ -28,13 +28,29 @@ main(List<String> args) async {
   parser.addFlag('numeric', abbr: 'n', help: 'Disable DNS resolve of hops, i.e. numeric output', negatable: false);
   parser.addFlag('report',  abbr: 'r', help: 'Run N cycles (default $reportCycles) and print plain report at exit', negatable: false);
   parser.addFlag('json',    abbr: 'j', help: 'Run N cycles (default $reportCycles) and print stats in JSON format', negatable: false);
+  parser.addOption('ttl',   abbr: 't', help: 'TTL range to ping, it can be also min or max only (default $firstTtl,$endTtl)', valueHelp: 'min,max');
   parser.addOption('wait',  abbr: 'w', help: 'Wait N seconds for a response (default $timeout)', valueHelp: 'seconds');
   parser.addFlag('help',    abbr: 'h', help: 'Show help', negatable: false);
   try {
     final parsed = parser.parse(args);
     if (parsed['count'] != null) {
       count = int.parse(parsed['count']);
-      if ((count ?? 1) <= 0) throw FormatException("Number($count) of cycles must be great than 0");
+      if ((count ?? 1) <= 0) throw FormatException('Number($count) of cycles must be great than 0');
+    }
+    if (parsed['ttl'] != null) {
+      var mm = parsed['ttl'].split(',');
+      if (mm.isNotEmpty) {
+        if (mm[0].isNotEmpty) {
+          firstTtl = int.parse(mm[0]);
+          if ((firstTtl <= 0) || (firstTtl >= maxTtl)) {
+            throw FormatException('Min TTL ($firstTtl) is out of range 1-$maxTtl'); }
+        }
+        if ((mm.length > 1) && mm[1].isNotEmpty) {
+          endTtl = int.parse(mm[1]);
+          if ((endTtl < firstTtl) || (endTtl >= maxTtl)) {
+            throw FormatException('Max TTL ($endTtl) is out of range $firstTtl-$maxTtl'); }
+        }
+      }
     }
     if (parsed['wait'] != null) {
       timeout = int.parse(parsed['wait']);

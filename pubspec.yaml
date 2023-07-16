@@ -1,7 +1,7 @@
 
 name: dmtr
-description: Pinger with a look like 'mtr'
-version: 0.1.5
+description: sys ping wrapper in dart with a look like 'mtr'
+version: 0.1.6
 repository: https://github.com/yvs2014/dmtr
 
 environment:

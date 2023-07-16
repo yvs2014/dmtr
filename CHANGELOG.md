@@ -1,3 +1,6 @@
+## 0.1.6
+- add '-t' option (min,max TTL setting)
+
 ## 0.1.5
 - add small internal ping wrapper (with timestamps, statuses, probes, and additional error-printing)
 

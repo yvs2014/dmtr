@@ -5,22 +5,20 @@ import 'common.dart';
 import 'dcurses.dart';
 import 'sysping.dart' show Ping, Data, Status;
 
-const _maxTtl = 30;
-
 late int hops;
 late List<Hop> stat;
 
 void resetPings() {
-  hops = _maxTtl;
-  stat = List<Hop>.generate(_maxTtl, (_) => Hop());
+  hops = maxTtl;
+  stat = List<Hop>.generate(maxTtl, (_) => Hop());
   maxHostaddr = maxHostname = 0;
 }
 
 void resetStats() {
-  hops = _maxTtl;
-  for (int i = 0; i < hops; i++) {
+  for (int i = 0; i < maxTtl; i++) {
     stat[i].data = (sent: 0, rcvd: 0, last: 0, best: 0, wrst: 0, avg: 0, jttr: 0);
   }
+  hops = maxTtl;
   maxHostaddr = maxHostname = 0;
 }
 
@@ -35,10 +33,10 @@ void _keyActions(String host) {
       case 'h': keyHelp(); showStat(stat, hops, host);
       case 'p': pause = !pause; addnote = pause ? ': in pause' : null;
       case 'q':
-        for (int i = 0; i < _maxTtl; i++) { stat[i].ping?.stop(); }
+        for (int i = 0; i < maxTtl; i++) { stat[i].ping?.stop(); }
         addnote = ': quitting...';
       case 'r': resetStats(); addnote = ': resetting...'; _postclearNote = true;
-      case 't': addnote = ': first-ttl not yet'; _postclearNote = true; // TODO later
+      case 't': addnote = ': min,max ttl (not yet)'; _postclearNote = true; // TODO later
     }
   }
 }
@@ -48,7 +46,7 @@ Future<void> pingHops(String host) async {
   List<Future<void>> input = [];
   Timer? timer;
   if (displayMode) timer = Timer.periodic(Duration(seconds: timeout), (_) { showStat(stat, hops, host); _keyActions(host); });
-  for (int i = 0; i < _maxTtl; i++) {
+  for (int i = firstTtl - 1; i < endTtl; i++) {
     int ttl = i + 1;
     stat[i].ping = Ping(host, ttl: ttl, count: count, dt: timeout, dns: dnsEnable);
     var p = stat[i].ping;
@@ -72,7 +70,7 @@ Future<void> _readEvents(int ttl, var stream) async {
         case Status.success:
           if ((data.ttl != null) && (hops > ttl)) { // 'data.ttl' is only at target
             hops = ttl; // stop pings at this ttl
-            for (int i = hops; i < _maxTtl; i++) { stat[i].ping?.stop(); }
+            for (int i = hops; i < maxTtl; i++) { stat[i].ping?.stop(); }
           }
           _setHopData(ndx, data);
         case Status.discard:
@@ -83,13 +81,13 @@ Future<void> _readEvents(int ttl, var stream) async {
           stat[ndx].ts = (data.ts != null) ? _parseTs(data.ts) : null; // keep it for possible future discard
         case Status.unknown: // unknown host: stop all pings
           hops = 0;
-          for (int i = 0; i < _maxTtl; i++) { stat[i].ping?.stop(); }
+          for (int i = 0; i < maxTtl; i++) { stat[i].ping?.stop(); }
           fail = data.mesg?.replaceFirst('ping: ', '');
           return;
 //        case Status.error:
 //          fail = 'Got error: ${data.mesg}';
       }
-      // at ping-exit take into account the last timeout
+      // take into account the last timeout at ping exit
       if ((data.rc != null) && (stat[ndx].seq == 0)) stat[ndx].data = _incHopDataSent(ndx);
     }
   }
