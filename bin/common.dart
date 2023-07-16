@@ -1,7 +1,7 @@
 
 import 'dart:io' show Platform;
 import 'package:sprintf/sprintf.dart' show sprintf;
-import 'package:dping4mtr/dping4mtr.dart' show Ping;
+import 'sysping.dart' show Ping;
 
 typedef TsUsec = ({int sec, int usec}); // timestamp: sec, usec
 final myname = (Platform.executable == 'dart') ? 'dmtr' : Platform.executable;
@@ -20,6 +20,7 @@ final statTitle = sprintf(_statfmt, ['Loss', 'Sent', 'Last', 'Best', 'Wrst', 'Av
 final statMax = sprintf(_statfmt, List<String>.filled(7, '')).length;
 int maxHostaddr = 0, maxHostname = 0;
 const lindent = 4; // lpart's indent
+String? fail;      // message if something went wrong (for example 'unknown host')
 
 // options can be reset with program args, below are defaults
 bool dnsEnable = true;     // -n
@@ -31,7 +32,6 @@ bool numeric = false;      // not toggled dnsEnable
 bool displayMode = true;   // if neither 'reportEnable' nor 'jsonEnable'
 const maxNamesPerHop = 5;
 const reportCycles = 10;   // for a report in json format and a plain one
-
 
 class Hop {
   HopData data = (sent: 0, rcvd: 0, last: 0, best: 0, wrst: 0, avg: 0, jttr: 0);

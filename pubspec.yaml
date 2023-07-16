@@ -1,7 +1,7 @@
 
 name: dmtr
-description: Pinger with a look like 'mtr' written in Dart
-version: 0.1.0
+description: Pinger with a look like 'mtr'
+version: 0.1.5
 repository: https://github.com/yvs2014/dmtr
 
 environment:
@@ -11,13 +11,8 @@ environment:
 dependencies:
   ffi: ^2.0.0
   args: ^2.0.0
+  async: ^2.11.0
   sprintf: ^7.0.0
-  dping4mtr: ^0.1.0
-
-dependency_overrides:
-  dping4mtr:
-    git:
-      url: https://github.com/yvs2014/dping4mtr
 
 dev_dependencies:
   lints: ^2.0.0

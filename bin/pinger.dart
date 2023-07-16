@@ -1,9 +1,9 @@
 
 import 'dart:io' show sleep;
 import 'dart:async' show Timer;
-import 'package:dping4mtr/dping4mtr.dart' show Ping, PingResponse, ErrorType, ReStatus;
 import 'common.dart';
 import 'dcurses.dart';
+import 'sysping.dart' show Ping, Data, Status;
 
 const _maxTtl = 30;
 
@@ -50,9 +50,9 @@ Future<void> pingHops(String host) async {
   if (displayMode) timer = Timer.periodic(Duration(seconds: timeout), (_) { showStat(stat, hops, host); _keyActions(host); });
   for (int i = 0; i < _maxTtl; i++) {
     int ttl = i + 1;
-    stat[i].ping = Ping(host, ttl: ttl, timing: true, count: count, timeout: timeout, dns: dnsEnable);
+    stat[i].ping = Ping(host, ttl: ttl, count: count, dt: timeout, dns: dnsEnable);
     var p = stat[i].ping;
-    if (p != null) input.add(_readEvents(ttl, p.stream));
+    if (p != null) input.add(_readEvents(ttl, p.data));
   }
   await Future.wait(input);
   if (displayMode) {
@@ -65,37 +65,33 @@ Future<void> pingHops(String host) async {
 
 
 Future<void> _readEvents(int ttl, var stream) async {
-  await for (final ev in stream) {
-//print("${DateTime.now()} got[ttl=$ttl] $ev"); // TMP
-    if (ev.error != null) { // got error
-      if (ev.error.error == ErrorType.unknownHost) { // unknown host: stop all pings
-        if (hops > 0) {
-           print('$myname: ${ev.error}');
-      	   hops = 0;
-           for (int i = hops; i < _maxTtl; i++) { stat[i].ping?.stop(); }
-        }
-        return;
-      }
-    }
-    int ndx = ttl - 1;
-    var re = ev.response;
-    if (re != null) {
-      switch (re?.status) {
-        case ReStatus.success:
-          if ((re.ttl != null) && (hops > ttl)) {
+  await for (final data in stream) {
+    if (data != null) {
+      int ndx = ttl - 1;
+      switch (data.status) {
+        case Status.success:
+          if ((data.ttl != null) && (hops > ttl)) { // 'data.ttl' is only at target
             hops = ttl; // stop pings at this ttl
             for (int i = hops; i < _maxTtl; i++) { stat[i].ping?.stop(); }
           }
-          _setHopData(ndx, re);
-        case ReStatus.discard:
-          _setHopData(ndx, re);
-        case ReStatus.timeout:
-          if (stat[ndx].seq != re.seq) stat[ndx].data = _incHopDataSent(ndx);
+          _setHopData(ndx, data);
+        case Status.discard:
+          _setHopData(ndx, data);
+        case Status.timeout:
+          if (stat[ndx].seq != data.seq) stat[ndx].data = _incHopDataSent(ndx);
           stat[ndx].seq = 0;
-          stat[ndx].ts = (re.ts != null) ? _parseTs(re.ts) : null; // keep it for possible future discard
+          stat[ndx].ts = (data.ts != null) ? _parseTs(data.ts) : null; // keep it for possible future discard
+        case Status.unknown: // unknown host: stop all pings
+          hops = 0;
+          for (int i = 0; i < _maxTtl; i++) { stat[i].ping?.stop(); }
+          fail = data.mesg?.replaceFirst('ping: ', '');
+          return;
+//        case Status.error:
+//          fail = 'Got error: ${data.mesg}';
       }
+      // at ping-exit take into account the last timeout
+      if ((data.rc != null) && (stat[ndx].seq == 0)) stat[ndx].data = _incHopDataSent(ndx);
     }
-    if ((ev.summary != null) && (stat[ndx].seq == 0)) stat[ndx].data = _incHopDataSent(ndx); // take into account a last timeout
   }
 }
 
@@ -104,18 +100,18 @@ HopData _incHopDataSent(int ndx) => (sent: stat[ndx].data.sent + 1, rcvd: stat[n
   last: stat[ndx].data.last, best: stat[ndx].data.best, wrst: stat[ndx].data.wrst,
   avg: stat[ndx].data.avg, jttr: stat[ndx].data.jttr);
 
-void _setHopData(int ndx, PingResponse re) {
+void _setHopData(int ndx, Data data) {
   int? last;
-  if (re.time != null) {
-    last = re.time?.inMicroseconds;
+  if (data.time != null) {
+    last = data.time?.inMicroseconds;
   } else {
-    if ((re.ts != null) && (stat[ndx].ts != null)) {
-      TsUsec tu = _parseTs(re.ts!);
+    if ((data.ts != null) && (stat[ndx].ts != null)) {
+      TsUsec tu = _parseTs(data.ts!);
       last = ((tu.sec - stat[ndx].ts!.sec) * 1000000 + (tu.usec - stat[ndx].ts!.usec)).toInt();
     }
   }
-  if (re.ip != null) _addAddrNameAt(ndx, re.ip!, re.name);
-  if (re.seq != null) stat[ndx].seq = re.seq!; // marker of stats
+  if (data.addr != null) _addAddrNameAt(ndx, data.addr!, data.name);
+  if (data.seq != null) stat[ndx].seq = data.seq!; // marker of stats
   int sent = stat[ndx].data.sent + 1;
   int rcvd = stat[ndx].data.rcvd + 1;
   int best = stat[ndx].data.best;

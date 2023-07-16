@@ -55,32 +55,39 @@ void keyHelp() {
   pause = false;
 }
 
-int _printTitle(int y0, int w, {bool over = false}) {
+int printTitle(int y0, int w, {bool over = false, bool up = false}) {
   int y = y0;
   attron(aBold);
-  List<String?> currtitle = [title];
-  if (numeric != !dnsEnable) currtitle.add('(DNS-${dnsEnable ? "on" : "off"})');
-  if (addnote != null) currtitle.add(addnote);
-  if (over) { move(y, 0); clrtoeol(); }
-  mvaddstr(y++, 0, sprintf('%*s', [(cols + (title?.length ?? 0)) ~/ 2,
-    currtitle.where((a) => (a != null) && a.isNotEmpty).join(' ')]));
-  if (over) { move(y, 0); clrtoeol(); }
-  attroff(aBold);
-  mvaddstr(y, 1, 'Keys:');
-  for (var h in _keyhints) {
-    if (h.key.isNotEmpty) {
-      attron(aBold); addstr(' ${h.key[0]}'); attroff(aBold);
-      if (h.key.length > 1) addstr(h.key.substring(1));
-    }
+  { // firstly print program name and its arguments
+    List<String?> parts = [title];
+    if (numeric != !dnsEnable) parts.add('(DNS-${dnsEnable ? "on" : "off"})');
+    if (addnote != null) parts.add(addnote);
+    if (over) { move(y, 0); clrtoeol(); }
+    { String s = parts.where((p) => (p != null) && p.isNotEmpty).join(' ');
+      mvaddstr(y++, 0, sprintf('%*s', [(cols + s.length) ~/ 2, s])); }
   }
-  String now = '${DateTime.now()}';
-  now = now.substring(0, now.indexOf('.'));
-  mvaddstr(y++, cols - (now.length + 1), now);
-  if (!over) {
-    y++;
-    attron(aBold);
-    mvaddstr(y++, 0, sprintf('%*s%-*.*s %s', [lindent, '', w, w, hostTitle, statTitle]));
-    attroff(aBold);
+  if (over || up) { move(y, 0); clrtoeol(); }
+  attroff(aBold);
+  if (up) { refresh(); }
+  else {
+    { // print 'Keys Datetime' line
+      mvaddstr(y, 1, 'Keys:');
+      for (var h in _keyhints) {
+        if (h.key.isNotEmpty) {
+          attron(aBold); addstr(' ${h.key[0]}'); attroff(aBold);
+          if (h.key.length > 1) addstr(h.key.substring(1));
+        }
+      }
+      String now = '${DateTime.now()}';
+      now = now.substring(0, now.indexOf('.'));
+      mvaddstr(y++, cols - (now.length + 1), now);
+    }
+    if (!over) { // print 'Host Stat' title
+      y++;
+      attron(aBold);
+      mvaddstr(y++, 0, sprintf('%*s%-*.*s %s', [lindent, '', w, w, hostTitle, statTitle]));
+      attroff(aBold);
+    }
   }
   return y - y0;
 }
@@ -88,10 +95,10 @@ int _printTitle(int y0, int w, {bool over = false}) {
 void showStat(List<Hop> stat, int hops, String host) {
   if (hops > 0) {
     int w = cols - (lindent + statMax + 2);
-    if (pause) { _printTitle(0, w, over: true); }
+    if (pause) { printTitle(0, w, over: true); }
     else {
       clear();
-      int y = _printTitle(0, w);
+      int y = printTitle(0, w);
       for (int i = 0; i < hops; i++) {
         String no = sprintf('%2d. ', [i + 1]);
         String addr = stat[i].addr.isNotEmpty ? stat[i].lpart(0) : '';

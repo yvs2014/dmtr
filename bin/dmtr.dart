@@ -1,8 +1,9 @@
 
-import 'dart:io' show exit;
+import 'dart:io' show exit, sleep;
 import 'dart:convert' show JsonEncoder;
 import 'package:sprintf/sprintf.dart';
 import 'package:args/args.dart' show ArgParser;
+import 'sysping.dart' show probeSysping;
 
 import 'common.dart';
 import 'pinger.dart';
@@ -18,6 +19,7 @@ void usage(String name, help, int indent) {
 
 
 main(List<String> args) async {
+  { final failed = await probeSysping(); if (failed != null) { print(failed); exit(-1); }}
   List<String> targets = [];
 
   // Parse arguments
@@ -58,22 +60,26 @@ main(List<String> args) async {
 
   displayMode = !(reportEnable || jsonEnable);
   if (displayMode && !openDisplay()) return -1;
-  List jall = [];
+  List json = [];
   for (var i = 0; i < targets.length; i++) { // note: one by one, not async
+    fail = null;
     setTitle(targets[i]);
     await pingHops(targets[i]); // Run main loop
+    if (displayMode && (fail != null)) { addnote = '($fail)'; printTitle(0, 0, up: true);
+      sleep(Duration(seconds: 3)); addnote = null;}
     if (reportEnable) { // Print plain report
       if (i != 0) print('');
       String now = '${DateTime.now()}';
-      print("[${now.substring(0, now.indexOf('.'))}] $title");
-      printReport(stat, hops);
+      now = now.substring(0, now.indexOf('.'));
+      if (fail != null) { print('[$now] $fail'); }
+      else { print("[$now] $title"); printReport(stat, hops); }
     }
-    if (jsonEnable) jall.add(getMappedHops(stat, hops, targets[i])); // Add mapped stats for a target
+    if (jsonEnable) json.add(getMappedHops(stat, hops, targets[i])); // Add mapped stats for a target
   }
   if (displayMode) closeDisplay();
   if (jsonEnable) { // Print report in JSON format
     var encoder = JsonEncoder.withIndent('  ');
-    print(encoder.convert(jall));
+    print(encoder.convert(json));
   }
 }
 
