@@ -25,11 +25,12 @@ jobs:
           fetch-depth: 0
           ref: main
       - name: Install mandatory packages for building
-        run: sudo apt install -y dart && dart pub get
+        run: ./apt_install_dart.sh && dart pub get
       - name: Create executable with ${{matrix.compiler}}
         run: dart compile exe -o dmtr bin/dmtr.dart
       - name: Run on ${{matrix.os}}
-        run: ./dmtr -r google.com
+        run: ping -c1 google.com && ./dmtr -r google.com || ./dmtr -r localhost
+# ping -c3 -OD 8.8.8.8 && ping -t3 -c3 -OD 8.8.8.8
 
   build_on_macos_and_run:
     name: Build-n-Run on ${{matrix.os}} with ${{matrix.compiler}}
@@ -48,6 +49,6 @@ jobs:
       - name: Create executable with ${{matrix.compiler}}
         run: dart compile exe -o dmtr bin/dmtr.dart
       - name: Run on ${{matrix.os}}
-        run: ping -c3 --apple-time 8.8.8.8 && ping -m3 -c3 --apple-time 8.8.8.8
-# ./dmtr -r google.com
+        run: ping -c1 google.com && ./dmtr -r google.com || ./dmtr -r localhost
+# ping -c3 --apple-time 8.8.8.8 && ping -m3 -c3 --apple-time 8.8.8.8
 

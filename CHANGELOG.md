@@ -1,3 +1,6 @@
+## 0.1.7
+- add macos timestamp (debug mode)
+
 ## 0.1.6
 - add '-t' option (min,max TTL setting)
 

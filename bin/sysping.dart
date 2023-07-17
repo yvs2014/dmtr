@@ -32,37 +32,52 @@ class Data {
 }
 
 typedef _TrRegexp = ({RegExp contain, RegExp? match});
+
+_TrRegexp _osDependedDiscard() {
+  if (Platform.isLinux) { return (contain: RegExp(r'^(\[(?<ts>.*)\] )*From'),
+    match: RegExp(r'^\[(?<ts>[0-9.]+)\] From (((?<name>.*) \((?<addr>.*)\))|(?<ip>.*)) icmp_seq=(?<seq>\d+) (?<mesg>.*)')); }
+  if (Platform.isMacOS) { return (contain: RegExp(r' bytes from .*: (?!icmp_seq=)'),
+    match: RegExp(r'^(?<ts>[0-9.:]+) .* bytes from (((?<name>.*) \((?<addr>.*)\))|(?<ip>.*)): (?<mesg>.*)')); }
+  throw UnimplementedError('Platform ${Platform.operatingSystem} is not supported (yet)');
+}
+
+_TrRegexp _osDependedTimeout() {
+  if (Platform.isLinux) { return (contain: RegExp(r'no answer yet'),
+    match: RegExp(r'^\[(?<ts>[0-9.]+)\] .*icmp_seq=(?<seq>\d+)')); }
+  if (Platform.isMacOS) { return (contain: RegExp(r'Request timeout'),
+    match: RegExp(r'^(?<ts>[0-9.:]+) ')); }
+  throw UnimplementedError('Platform ${Platform.operatingSystem} is not supported (yet)');
+}
+
 final Map<Status, _TrRegexp> _tre = { // regexps for transformer (linux, macos)
-  Status.success: (contain: RegExp(r'bytes from'),
+  Status.success: (contain: RegExp(r' bytes from .*: icmp_seq='),
     match: RegExp(r'from (((?<name>.*) \((?<addr>.*)\))|(?<ip>.*)): icmp_seq=(?<seq>\d+) ttl=(?<ttl>\d+) time=(?<time>(\d+).?(\d+))')),
-  Status.discard: (contain: RegExp(r'^(\[(?<ts>.*)\] )*From'),
-    match: RegExp(r'^\[(?<ts>.*)\] From (((?<name>.*) \((?<addr>.*)\))|(?<ip>.*)) icmp_seq=(?<seq>\d+) (?<mesg>.*)')),
-  Status.timeout: (contain: RegExp(r'no answer yet|Request timeout'),
-    match: RegExp(r'\[(?<ts>.*)\] .*icmp_seq[= ](?<seq>\d+)')),
+  Status.discard: _osDependedDiscard(),
+  Status.timeout: _osDependedTimeout(),
   Status.unknown: (contain: RegExp(r'[Uu]nknown host|service not known|failure in name'), match: null),
 };
 
-(int, String, String, String?) _osDepend() {
-  if (Platform.isLinux) return (1, '-t', '-OD', '-6');
-  if (Platform.isMacOS) return (1000, '-m', '--apple-time', null);
+Map<String, dynamic> _osDependedOpts() {
+  if (Platform.isLinux) return {'ttl': '-t', 'ts': '-OD', 'v6': '-6'};
+  if (Platform.isMacOS) return {'ttl': '-m', 'ts': '--apple-time', 'factor': 1000};
   throw UnimplementedError('Platform ${Platform.operatingSystem} is not supported (yet)');
 }
+final _osOpts = _osDependedOpts();
 
 class Ping {
   Ping(host, { int? count, int dt = 1, int ttl = 30, bool dns = true, bool ipv6 = false}) {
     _args.add('-i $dt');
     if (!dns) _args.add('-n');
     if (count != null) _args.add('-c $count');
-    var (wfactor, optTTL, optTS, ipv6opt) = _osDepend();
     if (ipv6) {
-      if (ipv6opt != null) { _args.add(ipv6opt); }
+      if (_osOpts.containsKey('v6')) { _args.add(_osOpts['v6']); }
       else if (_sysping6 == null) { throw UnimplementedError('${sysping}6 is not found'); }
       else { pingname = _sysping6!; }
     }
-    dt *= wfactor;
+    if (_osOpts.containsKey('factor')) dt = (dt * _osOpts['factor']).toInt();
     _args.add('-W $dt');
-    _args.add('$optTTL $ttl');
-    _args.add(optTS);
+    _args.add("${_osOpts['ttl']} $ttl");
+    _args.add("${_osOpts['ts']}");
     _args.add(host);
     _cntr = StreamController<Data>(
       onListen: _onListen,
@@ -153,7 +168,7 @@ void _fnDiscard(data, sink, match) {
 }
 
 void _fnTimeout(data, sink, match) {
-  var seq = match.namedGroup('seq');
+  var seq = match.groupNames.contains('seq') ? match.namedGroup('seq') : null;
   sink.add(Data(
     status: Status.timeout, // got timeout response
     seq: seq == null ? null : int.parse(seq),

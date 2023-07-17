@@ -19,6 +19,7 @@ void usage(String name, help, int indent) {
 
 
 main(List<String> args) async {
+  osDepended();
   { final failed = await probeSysping(); if (failed != null) { print(failed); exit(-1); }}
   List<String> targets = [];
 

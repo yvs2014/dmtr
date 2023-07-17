@@ -5,7 +5,7 @@ import 'sysping.dart' show Ping;
 
 typedef TsUsec = ({int sec, int usec}); // timestamp: sec, usec
 final myname = (Platform.executable == 'dart') ? 'dmtr' : Platform.executable;
-final version = '0.1.6';
+final version = '0.1.7';
 String? optstr;
 String? title;
 bool pause = false;
