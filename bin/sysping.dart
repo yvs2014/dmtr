@@ -7,14 +7,11 @@ import 'package:async/async.dart' show StreamGroup;
 enum Status { undefined, success, discard, timeout, unknown }
 const utfenv = {'LC_ALL': 'C.UTF-8'};
 const sysping = 'ping';
-String? _sysping6;
 
 Future<dynamic> probeSysping() async {
   try { Process.runSync(sysping, []); }
   on ProcessException catch (e) { return '${e.executable}: ${e.message}'; }
   catch (e) { return e; }
-  try { Process.runSync('${sysping}6', []); }
-  catch (_) { _sysping6 = '${sysping}6'; }
   return null;
 }
 
@@ -33,51 +30,24 @@ class Data {
 
 typedef _TrRegexp = ({RegExp contain, RegExp? match});
 
-_TrRegexp _osDependedDiscard() {
-  if (Platform.isLinux) { return (contain: RegExp(r'^(\[(?<ts>.*)\] )*From'),
-    match: RegExp(r'^\[(?<ts>[0-9.]+)\] From (((?<name>.*) \((?<addr>.*)\))|(?<ip>.*)) icmp_seq=(?<seq>\d+) (?<mesg>.*)')); }
-  if (Platform.isMacOS) { return (contain: RegExp(r' bytes from .*: (?!icmp_seq=)'),
-    match: RegExp(r'^(?<ts>[0-9.:]+) .* bytes from (((?<name>.*) \((?<addr>.*)\))|(?<ip>.*)): (?<mesg>.*)')); }
-  throw UnimplementedError('Platform ${Platform.operatingSystem} is not supported (yet)');
-}
-
-_TrRegexp _osDependedTimeout() {
-  if (Platform.isLinux) { return (contain: RegExp(r'no answer yet'),
-    match: RegExp(r'^\[(?<ts>[0-9.]+)\] .*icmp_seq=(?<seq>\d+)')); }
-  if (Platform.isMacOS) { return (contain: RegExp(r'Request timeout'),
-    match: RegExp(r'^(?<ts>[0-9.:]+) ')); }
-  throw UnimplementedError('Platform ${Platform.operatingSystem} is not supported (yet)');
-}
-
-final Map<Status, _TrRegexp> _tre = { // regexps for transformer (linux, macos)
-  Status.success: (contain: RegExp(r' bytes from .*: icmp_seq='),
+final Map<Status, _TrRegexp> _tre = { // regexps for transformer
+  Status.success: (contain: RegExp(r'bytes from .* time='),
     match: RegExp(r'from (((?<name>.*) \((?<addr>.*)\))|(?<ip>.*)): icmp_seq=(?<seq>\d+) ttl=(?<ttl>\d+) time=(?<time>(\d+).?(\d+))')),
-  Status.discard: _osDependedDiscard(),
-  Status.timeout: _osDependedTimeout(),
-  Status.unknown: (contain: RegExp(r'[Uu]nknown host|service not known|failure in name'), match: null),
+  Status.discard: (contain: RegExp(r'From'),
+    match: RegExp(r'^\[(?<ts>[0-9.]+)\] From (((?<name>.*) \((?<addr>.*)\))|(?<ip>.*)) icmp_seq=(?<seq>\d+) (?<mesg>.*)')),
+  Status.timeout: (contain: RegExp(r'no answer yet'),
+    match: RegExp(r'^\[(?<ts>[0-9.]+)\] .*icmp_seq=(?<seq>\d+)')),
+  Status.unknown: (contain: RegExp(r'nknown host|ervice not known|ailure in name'), match: null),
 };
 
-Map<String, dynamic> _osDependedOpts() {
-  if (Platform.isLinux) return {'ttl': '-t', 'ts': '-OD', 'v6': '-6'};
-  if (Platform.isMacOS) return {'ttl': '-m', 'ts': '--apple-time', 'factor': 1000};
-  throw UnimplementedError('Platform ${Platform.operatingSystem} is not supported (yet)');
-}
-final _osOpts = _osDependedOpts();
 
 class Ping {
   Ping(host, { int? count, int dt = 1, int ttl = 30, bool dns = true, bool ipv6 = false}) {
-    _args.add('-i $dt');
-    if (!dns) _args.add('-n');
+    if (!Platform.isLinux) throw Exception("Platform '${Platform.operatingSystem}' is not supported");
+    _args.addAll(['-i $dt', '-W $dt', '-t $ttl']);
     if (count != null) _args.add('-c $count');
-    if (ipv6) {
-      if (_osOpts.containsKey('v6')) { _args.add(_osOpts['v6']); }
-      else if (_sysping6 == null) { throw UnimplementedError('${sysping}6 is not found'); }
-      else { pingname = _sysping6!; }
-    }
-    if (_osOpts.containsKey('factor')) dt = (dt * _osOpts['factor']).toInt();
-    _args.add('-W $dt');
-    _args.add("${_osOpts['ttl']} $ttl");
-    _args.add("${_osOpts['ts']}");
+    if (!dns) _args.add('-n');
+    if (ipv6) _args.add('-6');
     _args.add(host);
     _cntr = StreamController<Data>(
       onListen: _onListen,
@@ -89,7 +59,7 @@ class Ping {
 
   String pingname = sysping;
   late Process _process;
-  final List<String> _args = [];
+  final List<String> _args = ['-OD'];
 
   late final StreamController<Data> _cntr;
   final StreamTransformer<String, Data> _tf = transformer;

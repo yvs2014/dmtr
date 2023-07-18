@@ -13,16 +13,8 @@ const cERR = -1;
 const cAttrShift = 8;
 const aBold = 1 << (13 + cAttrShift);
 
-List<String> get libNames => ['libncurses', 'libncursesw', 'libcurses'];
-
-List<String> get soSuffixes {
-  if (Platform.isLinux) return ['so.6', 'so'];
-  if (Platform.isMacOS) return ['dylib'];
-  if (Platform.isWindows) return ['dll'];
-  return ['so'];
-}
-
 DynamicLibrary _dynload(List<String> names, List<String> suffixes) {
+  if (!Platform.isLinux) throw Exception("Platform '${Platform.operatingSystem}' is not supported");
   List errs = [];
   for (var lib in names) {
     for (var so in suffixes) {
@@ -34,7 +26,7 @@ DynamicLibrary _dynload(List<String> names, List<String> suffixes) {
   throw Exception("No one library can be loaded: ${names.join(', ')}");
 }
 
-final _libncurses = _dynload(libNames, soSuffixes);
+final _libncurses = _dynload(['libncurses', 'libncursesw', 'libcurses'], ['so.6', 'so']);
 
 // C functions' wrapping
 Voidptr initscr() => _initscr();

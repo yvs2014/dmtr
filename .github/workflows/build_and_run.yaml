@@ -29,26 +29,5 @@ jobs:
       - name: Create executable with ${{matrix.compiler}}
         run: dart compile exe -o dmtr bin/dmtr.dart
       - name: Run on ${{matrix.os}}
-        run: ping -c1 google.com && ./dmtr -r google.com || ./dmtr -r localhost
-# ping -c3 -OD 8.8.8.8 && ping -t3 -c3 -OD 8.8.8.8
-
-  build_on_macos_and_run:
-    name: Build-n-Run on ${{matrix.os}} with ${{matrix.compiler}}
-    runs-on: ${{matrix.os}}
-    strategy:
-      matrix:
-        os: [macos-latest]
-        compiler: [dart]
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-          ref: main
-      - name: Install mandatory packages for building
-        run: brew install dart-sdk && dart pub get
-      - name: Create executable with ${{matrix.compiler}}
-        run: dart compile exe -o dmtr bin/dmtr.dart
-      - name: Run on ${{matrix.os}}
-        run: ping -c1 google.com && ./dmtr -r google.com || ./dmtr -r localhost
-# ping -c3 --apple-time 8.8.8.8 && ping -m3 -c3 --apple-time 8.8.8.8
+        run: ping -c1 google.com && ./dmtr -r google.com || ./dmtr -r 127.0.0.1
 

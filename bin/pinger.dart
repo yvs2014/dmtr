@@ -1,5 +1,5 @@
 
-import 'dart:io' show Platform, sleep;
+import 'dart:io' show sleep;
 import 'dart:async' show Timer;
 import 'common.dart';
 import 'dcurses.dart';
@@ -7,15 +7,7 @@ import 'sysping.dart' show Ping, Data, Status;
 
 late int hops;
 late List<Hop> stat;
-late TsUsec? Function(String s) _parseTS;
 
-final macTS = RegExp(r'^(?<hh>\d+):(?<mm>\d+):(?<ss>\d+)\.(?<us>\d+)');
-
-void osDepended() {
-  if (Platform.isLinux) { _parseTS = _parseLinTS; }
-  else if (Platform.isMacOS) { _parseTS = _parseMacTS; }
-  else { throw UnimplementedError('Platform ${Platform.operatingSystem} is not supported (yet)'); }
-}
 
 void resetPings() {
   hops = maxTtl;
@@ -87,7 +79,7 @@ Future<void> _readEvents(int ttl, var stream) async {
         case Status.timeout:
           if (stat[ndx].seq != data.seq) stat[ndx].data = _incHopDataSent(ndx);
           stat[ndx].seq = 0;
-          stat[ndx].ts = (data.ts != null) ? _parseTS(data.ts) : null; // keep it for possible future discard
+          stat[ndx].ts = (data.ts != null) ? _parseTS(data.ts) : null; // keep timestamp for possible future discards
         case Status.unknown: // unknown host: stop all pings
           hops = 0;
           for (int i = 0; i < maxTtl; i++) { stat[i].ping?.stop(); }
@@ -140,7 +132,7 @@ void _setHopData(int ndx, Data data) {
 }
 
 
-TsUsec? _parseLinTS(String s) {
+TsUsec? _parseTS(String s) {
   try {
     var a = s.split('.');
     int sec = 0, usec = 0;
@@ -148,25 +140,6 @@ TsUsec? _parseLinTS(String s) {
     if (a.length == 1) sec = int.parse(a[0]);
     return (sec: sec, usec: usec);
   } catch (e) { print('(Cannot parse TS: $e)'); }
-  return null;
-}
-
-TsUsec? _parseMacTS(String s) {
-  try {
-    final match = macTS.firstMatch(s);
-    if (match != null) {
-      String? hh = match.namedGroup('hh');
-      String? mm = match.namedGroup('mm');
-      String? ss = match.namedGroup('ss');
-      String? us = match.namedGroup('us');
-      if ((hh != null) || (mm != null) || (ss != null)) {
-        int sec = (int.parse(hh!) * 60 + int.parse(mm!)) * 60 + int.parse(ss!);
-        int usec = (us != null) ? int.parse(us) : 0;
-        return (sec: sec, usec: usec);
-      }
-    }
-  } catch (e) { print("(Parsing '$s' got: $e"); }
-  finally { print('(Cannot parse TS: $s)'); }
   return null;
 }
 
