@@ -182,8 +182,11 @@ void _keyActions(String host) {
 
 Future<void> pingHops(String host) async {
   _resetPings();
-  Timer? timer;
-  if (displayMode) timer = Timer.periodic(Duration(seconds: timeout), (_) { showStat(host, stat, _hops); _keyActions(host); });
+  Timer? pingTimer, kbdTimer;
+  if (displayMode) {
+    pingTimer = Timer.periodic(Duration(seconds: timeout), (_) => showStat(host, stat, _hops));
+    kbdTimer = Timer.periodic(Duration(milliseconds: 50), (_) => _keyActions(host));
+  }
   _futuresInRange(host, firstTTL, lastTTL);
   logger?.p('start $host: count=$count timeout=${timeout}sec dns=$dnsEnable');
   while (_futures.whereNotNull().isNotEmpty) {
@@ -192,7 +195,8 @@ Future<void> pingHops(String host) async {
   logger?.p('finish $host');
   if (displayMode) {
     sleep(Duration(milliseconds: timeout * 1000 ~/ 2));
-    timer?.cancel();
+    pingTimer?.cancel();
+    kbdTimer?.cancel();
     showStat(host, stat, _hops);
     sleep(Duration(milliseconds: 500)); // 0.5sec enough to spot last updates
   }
