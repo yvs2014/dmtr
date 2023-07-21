@@ -117,6 +117,7 @@ int printTitle(int y0, int w, {bool over = false, bool up = false}) {
     List<String?> parts = [title];
     if (numeric != !dnsEnable) parts.add('(DNS-${dnsEnable ? "on" : "off"})');
     if (addnote != null) parts.add(addnote);
+    if (!gotdata) parts.add(': no data yet');
     if (over) { move(y, 0); clrtoeol(); }
     { String s = parts.where((p) => (p != null) && p.isNotEmpty).join(' ');
       mvaddstr(y++, 0, sprintf('%*s', [(cols + s.length) ~/ 2, s])); }
@@ -148,22 +149,21 @@ int printTitle(int y0, int w, {bool over = false, bool up = false}) {
 }
 
 void showStat(String host, List<Hop> stat, int hops) {
-  if (hops > 0) {
-    int w = cols - (lindent + statMax + 2);
-    if (pause) { printTitle(0, w, over: true); }
-    else {
-      clear();
-      int y = printTitle(0, w);
+  int w = cols - (lindent + statMax + 2);
+  if (pause) { printTitle(0, w, over: true); }
+  else {
+    clear();
+    int y = printTitle(0, w);
+    if ((hops > 0) && gotdata) {
       int end = (hops < lastTTL) ? hops : lastTTL;
       for (int i = firstTTL - 1; i < end; i++) {
         String no = sprintf('%2d. ', [i + 1]);
         String addr = stat[i].addr.isNotEmpty ? stat[i].lpart(0) : '';
         mvaddstr(y++, 0, sprintf('%*s%-*.*s %s', [lindent, no, w, w, addr, stat[i].rpart]));
-        if (stat[i].addr.length > 1) {
-          for (int j = 1; j < stat[i].addr.length; j++) {
-            mvaddstr(y++, 0, sprintf('%*s%s', [lindent, '', stat[i].lpart(j)]));
-          }
+        for (int j = 1; j < stat[i].addr.length; j++) {
+          mvaddstr(y++, 0, sprintf('%*s%s', [lindent, '', stat[i].lpart(j)]));
         }
+        if (stat[i].unreach) mvaddstr(y++, 0, sprintf('%*s%s', [lindent, '', unreachMesg]));
       }
     }
     refresh();

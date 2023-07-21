@@ -62,6 +62,8 @@ void _addAddrNameAt(int ndx, String addr, String? name) {
 }
 
 void _setHopData(int ndx, Data data) {
+  if (!gotdata) gotdata = true;
+  if (stat[ndx].unreach) stat[ndx].unreach = false;
   int? last;
   if (data.time != null) {
     last = data.time?.inMicroseconds;
@@ -99,6 +101,13 @@ HopData _incHopDataSent(int ndx) => (sent: stat[ndx].data.sent + 1, rcvd: stat[n
   last: stat[ndx].data.last, best: stat[ndx].data.best, wrst: stat[ndx].data.wrst,
   avg: stat[ndx].data.avg, jttr: stat[ndx].data.jttr);
 
+int _ndxBackOfUnreach(int ndx) {
+  for (int i = ndx; i > 0; i--) {
+    if (!stat[i - 1].unreach) return i;
+  }
+  return 0;
+}
+
 Future<void> _readEvents(int ttl, var stream) async {
   await for (final data in stream) {
     if (data != null) {
@@ -113,6 +122,11 @@ Future<void> _readEvents(int ttl, var stream) async {
           _setHopData(ndx, data);
         case Status.discard:
           _setHopData(ndx, data);
+          if (data.mesg?.contains('nreachable') || false) {
+            stat[ndx].unreach = true;
+            int lastndx = (lastTTL < _hops) ? lastTTL : _hops;
+            if ((lastndx == ttl) && (lastndx > 0)) _hops = _ndxBackOfUnreach(ndx) + 1;
+          }
         case Status.timeout:
           if (stat[ndx].seq != data.seq) stat[ndx].data = _incHopDataSent(ndx);
           stat[ndx].seq = 0;
@@ -185,7 +199,7 @@ Future<void> pingHops(String host) async {
   Timer? pingTimer, kbdTimer;
   if (displayMode) {
     pingTimer = Timer.periodic(Duration(seconds: timeout), (_) => showStat(host, stat, _hops));
-    kbdTimer = Timer.periodic(Duration(milliseconds: 50), (_) => _keyActions(host));
+    kbdTimer = Timer.periodic(Duration(milliseconds: 100), (_) => _keyActions(host));
   }
   _futuresInRange(host, firstTTL, lastTTL);
   logger?.p('start $host: count=$count timeout=${timeout}sec dns=$dnsEnable');

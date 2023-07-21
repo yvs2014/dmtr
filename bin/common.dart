@@ -12,6 +12,7 @@ String? optstr;
 String? title;
 String? addnote;
 bool pause = false;
+bool gotdata = false; // true after getting any first reply
 
 // as a record to be synced
 typedef HopData = ({int sent, int rcvd, int last, int best, int wrst, double avg, double jttr}); // last,best,wrst,avg in usec
@@ -37,6 +38,7 @@ bool numeric = false;      // not toggled dnsEnable
 bool displayMode = true;   // if neither 'reportEnable' nor 'jsonEnable'
 const maxNamesPerHop = 5;
 const reportCycles = 10;   // for a report in json format and a plain one
+const unreachMesg = 'Destination is unreachable';
 
 class Hop {
   HopData data = (sent: 0, rcvd: 0, last: 0, best: 0, wrst: 0, avg: 0, jttr: 0);
@@ -46,6 +48,7 @@ class Hop {
   int seq = -1; // a marker to avoid dups at calculation of 'sent'
   TsUsec? ts;   // timestamp of timeouted response
   int? prtt;    // previous RTT
+  bool unreach = false; // unreachable
   String host(int n) => dnsEnable ? ((name[n] ?? addr[n]) ?? '') : (addr[n] ?? '');
   String get msec => (data.rcvd > 0) ? prfmt(data.last / 1000) : '';
   String get loss => (data.sent > 0) ? '${prfmt((data.sent - data.rcvd) / data.sent * 100)}%' : '';
@@ -66,5 +69,5 @@ const floatUpto = 10;
 const twoDigitsUpto = 0.1;
 String prfmt(double v) => sprintf('%.*f', [((v > 0) && (v < floatUpto)) ? ((v < twoDigitsUpto) ? 2 : 1) : 0, v]);
 void setTitle(String host) { title = ['$myname-$version', optstr, host].where((a) => (a != null) && a.isNotEmpty).join(' '); }
-void cleanNonStat(Hop h) { h.ping = h.ts = h.prtt = null; h.seq = -1; }
+void cleanNonStat(Hop h) { h.ping = h.ts = h.prtt = null; h.seq = -1; h.unreach = false; }
 

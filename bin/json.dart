@@ -3,8 +3,10 @@ import 'common.dart';
 
 Map<String, dynamic> getMappedHops(List<Hop> stat, int hops, String host) {
   List<Map<String, dynamic>> all = [];
-  int end = (hops < lastTTL) ? hops : lastTTL;
-  for (int i = firstTTL - 1; i < end; i++) { all.add(_hop2map(stat[i], i + 1)); }
+  if (gotdata) {
+    int end = (hops < lastTTL) ? hops : lastTTL;
+    for (int i = firstTTL - 1; i < end; i++) { all.add(_hop2map(stat[i], i + 1)); }
+  }
   var map = { 'target': host, 'stats': all };
   if (fail != null) map['fail'] = fail!;
   return map;
@@ -22,6 +24,7 @@ Map<String, dynamic> _hop2map(Hop h, int ttl) {
   };
   all.removeWhere((k, v) => (v is List) ? v.isEmpty : false);
   if (tm.isNotEmpty) all.addAll({'timeunit': 'millisecond', 'timing': tm});
+  if (h.unreach) all['extra'] = unreachMesg;
   return all;
 }
 
