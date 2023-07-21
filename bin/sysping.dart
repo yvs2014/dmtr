@@ -5,11 +5,11 @@ import 'dart:convert' show Utf8Decoder, LineSplitter;
 import 'package:async/async.dart' show StreamGroup;
 
 enum Status { undefined, success, discard, timeout, unknown }
-const utfenv = {'LC_ALL': 'C.UTF-8'};
-const sysping = 'ping';
+const _utfenv = {'LC_ALL': 'C.UTF-8'};
+const _sysping = 'ping';
 
 Future<dynamic> probeSysping() async {
-  try { Process.runSync(sysping, []); }
+  try { Process.runSync(_sysping, []); }
   on ProcessException catch (e) { return '${e.executable}: ${e.message}'; }
   catch (e) { return e; }
   return null;
@@ -57,7 +57,6 @@ class Ping {
     );
   }
 
-  String pingname = sysping;
   late Process _process;
   final List<String> _args = ['-OD'];
 
@@ -70,7 +69,7 @@ class Ping {
   Stream<Data> get data => _cntr.stream;
 
   Future<void> _onListen() async {
-    _process = await Process.start(pingname, _args, environment: utfenv);
+    _process = await Process.start(_sysping, _args, environment: _utfenv);
     _sub = _datastream.listen((ev) => _cntr.add(ev), onDone: _done);
   }
   Future<void> _done() async { if (!_cntr.isClosed) { _cntr.add(Data(rc: await _process.exitCode)); await _cntr.close(); }}

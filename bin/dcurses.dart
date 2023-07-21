@@ -1,5 +1,6 @@
 
 import 'dart:io' show sleep;
+import 'dart:convert' show utf8;
 import 'package:sprintf/sprintf.dart' show sprintf;
 import 'libncurses.dart';
 import 'common.dart';
@@ -31,6 +32,25 @@ bool openDisplay() {
 
 void closeDisplay() { addstr('\n'); refresh(); endwin(); }
 
+String? parseMinMaxTTL(String s) {
+  try {
+    var mm = s.split(',');
+    if (mm.isNotEmpty) {
+      if (mm[0].isNotEmpty) {
+        int n = int.parse(mm[0]);
+        if ((n > 0) && (n < maxTTL)) { firstTTL = n; }
+        else { return 'Min TTL ($n) is out of range 1..$maxTTL'; }
+      }
+      if ((mm.length > 1) && mm[1].isNotEmpty) {
+        int n = int.parse(mm[1]);
+        if ((n >= firstTTL) && (n < maxTTL)) { lastTTL = n; }
+        else { return 'Max TTL ($n) is out of range $firstTTL..$lastTTL'; }
+      }
+    }
+  } catch (e) { return '$e'; }
+  return null;
+}
+
 String? getKey() {
   int c = getch();
   return (c > 0) ? String.fromCharCode(c) : null;
@@ -52,6 +72,41 @@ void keyHelp() {
   mvaddstr(y++, x0, 'Press any key to continue ...');
   refresh();
   while (getch() < 0) { sleep(Duration(milliseconds: 200)); }
+  pause = false;
+}
+
+const _kEnter = 10;
+const _kBackspace = 127;
+
+void keyTTL() {
+  const prompt = 'Enter TTL range: ';
+  pause = true;
+  clear();
+  int y = 2, x = 1;
+  mvaddstr(y, x, prompt);
+  List<int> input = [];
+  echo();
+  while (true) {
+    int c = getch();
+    if (c > 0) {
+      if (c == _kEnter) break; // Enter
+      if (c == _kBackspace) {  // Backspace
+        if (input.isNotEmpty) input.removeLast();
+        int xi = x + prompt.length + input.length;
+        mvaddstr(y, xi, '     '); move(y, xi);
+        continue;
+      }
+      input.add(c);
+      if (input.length > (cols - prompt.length - 2 * x)) break; // too many
+    }
+    sleep(Duration(milliseconds: 50));
+  }
+  noecho();
+  if (input.isNotEmpty) {
+    var e = parseMinMaxTTL(utf8.decode(input).trim());
+    if (e == null) { addnote = 'TTL range: $firstTTL..$lastTTL'; }
+    else { mvaddstr(y + 2, x, 'ERROR: $e'); refresh(); sleep(Duration(seconds: 3)); }
+  }
   pause = false;
 }
 
@@ -92,15 +147,15 @@ int printTitle(int y0, int w, {bool over = false, bool up = false}) {
   return y - y0;
 }
 
-void showStat(List<Hop> stat, int hops, String host) {
+void showStat(String host, List<Hop> stat, int hops) {
   if (hops > 0) {
     int w = cols - (lindent + statMax + 2);
     if (pause) { printTitle(0, w, over: true); }
     else {
       clear();
       int y = printTitle(0, w);
-      int end = (hops < endTtl) ? hops : endTtl;
-      for (int i = firstTtl - 1; i < end; i++) {
+      int end = (hops < lastTTL) ? hops : lastTTL;
+      for (int i = firstTTL - 1; i < end; i++) {
         String no = sprintf('%2d. ', [i + 1]);
         String addr = stat[i].addr.isNotEmpty ? stat[i].lpart(0) : '';
         mvaddstr(y++, 0, sprintf('%*s%-*.*s %s', [lindent, no, w, w, addr, stat[i].rpart]));

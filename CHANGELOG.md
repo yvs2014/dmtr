@@ -1,3 +1,6 @@
+## 0.1.8
+- customize TTL range at runtime
+
 ## 0.1.7
 - add macos timestamp (debug mode)
 

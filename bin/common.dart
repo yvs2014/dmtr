@@ -2,14 +2,16 @@
 import 'dart:io' show Platform;
 import 'package:sprintf/sprintf.dart' show sprintf;
 import 'sysping.dart' show Ping;
+import 'syslogger.dart' show Syslogger;
 
 typedef TsUsec = ({int sec, int usec}); // timestamp: sec, usec
 final myname = (Platform.executable == 'dart') ? 'dmtr' : Platform.executable;
-final version = '0.1.7';
+final version = '0.1.8';
+Syslogger? logger;
 String? optstr;
 String? title;
-bool pause = false;
 String? addnote;
+bool pause = false;
 
 // as a record to be synced
 typedef HopData = ({int sent, int rcvd, int last, int best, int wrst, double avg, double jttr}); // last,best,wrst,avg in usec
@@ -21,7 +23,7 @@ final statMax = sprintf(_statfmt, List<String>.filled(7, '')).length;
 int maxHostaddr = 0, maxHostname = 0;
 const lindent = 4; // lpart's indent
 String? fail;      // message if something went wrong (for example 'unknown host')
-const maxTtl = 30; // suppose it's enough for today's internet
+const maxTTL = 30; // suppose it's enough for today's internet
 
 // options can be reset with program args, below are defaults
 bool dnsEnable = true;     // -n
@@ -29,8 +31,8 @@ bool reportEnable = false; // -r
 bool jsonEnable = false;   // -j
 int timeout = 1;           // -w seconds
 int? count;                // -c count
-int firstTtl = 1;          // -t minTTL,maxTTL
-int endTtl = maxTtl;       //
+int firstTTL = 1;          // -t minTTL,maxTTL
+int lastTTL = maxTTL;      //
 bool numeric = false;      // not toggled dnsEnable
 bool displayMode = true;   // if neither 'reportEnable' nor 'jsonEnable'
 const maxNamesPerHop = 5;
@@ -64,4 +66,5 @@ const floatUpto = 10;
 const twoDigitsUpto = 0.1;
 String prfmt(double v) => sprintf('%.*f', [((v > 0) && (v < floatUpto)) ? ((v < twoDigitsUpto) ? 2 : 1) : 0, v]);
 void setTitle(String host) { title = ['$myname-$version', optstr, host].where((a) => (a != null) && a.isNotEmpty).join(' '); }
+void cleanNonStat(Hop h) { h.ping = h.ts = h.prtt = null; h.seq = -1; }
 

@@ -1,136 +1,39 @@
 
 import 'dart:io' show sleep;
 import 'dart:async' show Timer;
+import 'package:collection/collection.dart' show IterableNullableExtension;
 import 'common.dart';
 import 'dcurses.dart';
 import 'sysping.dart' show Ping, Data, Status;
 
-late int hops;
-late List<Hop> stat;
+late int _hops;
+int get hops => _hops;
+List<Hop> stat = [];
+var _futures = List<Future<void>?>.filled(maxTTL, null, growable: false); // ping futures
+bool _futureslocked = false;
 
 
-void resetPings() {
-  hops = maxTtl;
-  stat = List<Hop>.generate(maxTtl, (_) => Hop());
+void _resetPings() {
+  _hops = maxTTL;
+  stat = List<Hop>.generate(maxTTL, (_) => Hop());
   maxHostaddr = maxHostname = 0;
 }
 
-void resetStats() {
-  for (int i = 0; i < maxTtl; i++) {
+void _resetStats() {
+  for (int i = 0; i < maxTTL; i++) {
     stat[i].data = (sent: 0, rcvd: 0, last: 0, best: 0, wrst: 0, avg: 0, jttr: 0);
   }
-  hops = maxTtl;
+  _hops = maxTTL;
   maxHostaddr = maxHostname = 0;
 }
 
-bool _postclearNote = false;
-
-void _keyActions(String host) {
-  if (_postclearNote) { addnote = null; _postclearNote = false; }
-  String? c = getKey();
-  if (c?.isNotEmpty ?? false) {
-    switch (c!.toLowerCase()) {
-      case 'd': if (!numeric) dnsEnable = !dnsEnable;
-      case 'h': keyHelp(); showStat(stat, hops, host);
-      case 'p': pause = !pause; addnote = pause ? ': in pause' : null;
-      case 'q':
-        for (int i = 0; i < maxTtl; i++) { stat[i].ping?.stop(); }
-        addnote = ': quitting...';
-      case 'r': resetStats(); addnote = ': resetting...'; _postclearNote = true;
-      case 't': addnote = ': min,max ttl (not yet)'; _postclearNote = true; // TODO later
-    }
-  }
+void _stopPingAt(int at) {
+  if (stat[at].ping == null) return;
+  logger?.p('stop ping[ttl=${at + 1}]');
+  stat[at].ping?.stop();
+  cleanNonStat(stat[at]);
+  _futures[at] = null;
 }
-
-Future<void> pingHops(String host) async {
-  resetPings();
-  List<Future<void>> input = [];
-  Timer? timer;
-  if (displayMode) timer = Timer.periodic(Duration(seconds: timeout), (_) { showStat(stat, hops, host); _keyActions(host); });
-  for (int i = firstTtl - 1; i < endTtl; i++) {
-    int ttl = i + 1;
-    stat[i].ping = Ping(host, ttl: ttl, count: count, dt: timeout, dns: dnsEnable);
-    var p = stat[i].ping;
-    if (p != null) input.add(_readEvents(ttl, p.data));
-  }
-  await Future.wait(input);
-  if (displayMode) {
-    sleep(Duration(milliseconds: timeout * 1000 ~/ 2));
-    timer?.cancel();
-    showStat(stat, hops, host);
-    sleep(Duration(milliseconds: 500)); // 0.5sec enough to spot last updates
-  }
-}
-
-
-Future<void> _readEvents(int ttl, var stream) async {
-  await for (final data in stream) {
-    if (data != null) {
-      int ndx = ttl - 1;
-      switch (data.status) {
-        case Status.success:
-          if ((data.ttl != null) && (hops > ttl)) { // 'data.ttl' is only at target
-            hops = ttl; // stop pings at this ttl
-            for (int i = hops; i < maxTtl; i++) { stat[i].ping?.stop(); }
-          }
-          _setHopData(ndx, data);
-        case Status.discard:
-          _setHopData(ndx, data);
-        case Status.timeout:
-          if (stat[ndx].seq != data.seq) stat[ndx].data = _incHopDataSent(ndx);
-          stat[ndx].seq = 0;
-          stat[ndx].ts = (data.ts != null) ? _parseTS(data.ts) : null; // keep timestamp for possible future discards
-        case Status.unknown: // unknown host: stop all pings
-          hops = 0;
-          for (int i = 0; i < maxTtl; i++) { stat[i].ping?.stop(); }
-          fail = data.mesg?.replaceFirst('ping: ', '');
-          return;
-//        case Status.error:
-//          fail = 'Got error: ${data.mesg}';
-      }
-      // take into account the last timeout at ping exit
-      if ((data.rc != null) && (stat[ndx].seq == 0)) stat[ndx].data = _incHopDataSent(ndx);
-    }
-  }
-}
-
-
-HopData _incHopDataSent(int ndx) => (sent: stat[ndx].data.sent + 1, rcvd: stat[ndx].data.rcvd,
-  last: stat[ndx].data.last, best: stat[ndx].data.best, wrst: stat[ndx].data.wrst,
-  avg: stat[ndx].data.avg, jttr: stat[ndx].data.jttr);
-
-void _setHopData(int ndx, Data data) {
-  int? last;
-  if (data.time != null) {
-    last = data.time?.inMicroseconds;
-  } else {
-    if ((data.ts != null) && (stat[ndx].ts != null)) {
-      TsUsec? tu = _parseTS(data.ts!);
-      if (tu == null) return;
-      last = ((tu.sec - stat[ndx].ts!.sec) * 1000000 + (tu.usec - stat[ndx].ts!.usec)).toInt();
-    }
-  }
-  if (data.addr != null) _addAddrNameAt(ndx, data.addr!, data.name);
-  if (data.seq != null) stat[ndx].seq = data.seq!; // marker of stats
-  int sent = stat[ndx].data.sent + 1;
-  int rcvd = stat[ndx].data.rcvd + 1;
-  int best = stat[ndx].data.best;
-  int wrst = stat[ndx].data.wrst;
-  double avg  = stat[ndx].data.avg;
-  double jttr = stat[ndx].data.jttr;
-  if (last != null) {
-    if (last > wrst) wrst = last;
-    if ((last < best) || (best == 0)) best = last;
-    avg += (last - avg) / rcvd;
-    if ((stat[ndx].prtt != null) && (rcvd > 1)) {
-      int j = (last - stat[ndx].prtt!).abs();
-      jttr += (j - jttr) / (rcvd - 1);
-    }
-    stat[ndx].prtt = last;
-  }
-  stat[ndx].data = (sent: sent, rcvd: rcvd, last: last ?? stat[ndx].data.last, best: best, wrst: wrst, avg: avg, jttr: jttr);
-}
-
 
 TsUsec? _parseTS(String s) {
   try {
@@ -155,6 +58,143 @@ void _addAddrNameAt(int ndx, String addr, String? name) {
   } else if ((stat[ndx].name[an] == null) && (name != null)) { // if name is not set before
     stat[ndx].name[an] = name;
     if (name.length > maxHostname) maxHostname = name.length;
+  }
+}
+
+void _setHopData(int ndx, Data data) {
+  int? last;
+  if (data.time != null) {
+    last = data.time?.inMicroseconds;
+  } else {
+    var prev = stat[ndx].ts, currStr = data.ts;
+    if ((prev != null) && (currStr != null)) {
+      var curr = _parseTS(currStr);
+      if (curr == null) return;
+      last = ((curr.sec - prev.sec) * 1000000 + (curr.usec - prev.usec)).toInt();
+    }
+  }
+  if (data.addr != null) _addAddrNameAt(ndx, data.addr!, data.name);
+  if (data.seq != null) stat[ndx].seq = data.seq!; // marker of stats
+  int sent = stat[ndx].data.sent + 1;
+  int rcvd = stat[ndx].data.rcvd + 1;
+  int best = stat[ndx].data.best;
+  int wrst = stat[ndx].data.wrst;
+  double avg  = stat[ndx].data.avg;
+  double jttr = stat[ndx].data.jttr;
+  if (last != null) {
+    if (last > wrst) wrst = last;
+    if ((last < best) || (best == 0)) best = last;
+    avg += (last - avg) / rcvd;
+    var prev = stat[ndx].prtt;
+    if ((prev != null) && (rcvd > 1)) {
+      int j = (last - prev).abs();
+      jttr += (j - jttr) / (rcvd - 1);
+    }
+    stat[ndx].prtt = last;
+  }
+  stat[ndx].data = (sent: sent, rcvd: rcvd, last: last ?? stat[ndx].data.last, best: best, wrst: wrst, avg: avg, jttr: jttr);
+}
+
+HopData _incHopDataSent(int ndx) => (sent: stat[ndx].data.sent + 1, rcvd: stat[ndx].data.rcvd,
+  last: stat[ndx].data.last, best: stat[ndx].data.best, wrst: stat[ndx].data.wrst,
+  avg: stat[ndx].data.avg, jttr: stat[ndx].data.jttr);
+
+Future<void> _readEvents(int ttl, var stream) async {
+  await for (final data in stream) {
+    if (data != null) {
+      int ndx = ttl - 1;
+      if (stat[ndx].ping == null) continue; // it's already stopped, don't stat it
+      switch (data.status) {
+        case Status.success:
+          if ((data.ttl != null) && (_hops > ttl)) { // 'data.ttl' is only at target
+            _hops = ttl; // stop pings at this ttl
+            for (int i = _hops; i < maxTTL; i++) { _stopPingAt(i); }
+          }
+          _setHopData(ndx, data);
+        case Status.discard:
+          _setHopData(ndx, data);
+        case Status.timeout:
+          if (stat[ndx].seq != data.seq) stat[ndx].data = _incHopDataSent(ndx);
+          stat[ndx].seq = 0;
+          stat[ndx].ts = (data.ts != null) ? _parseTS(data.ts) : null; // keep timestamp for possible future discards
+        case Status.unknown: // unknown host: stop all pings
+          _hops = 0;
+          for (int i = 0; i < maxTTL; i++) { stat[i].ping?.stop(); }
+          fail = data.mesg?.replaceFirst('ping: ', '');
+          return;
+//        case Status.error:
+//          fail = 'Got error: ${data.mesg}';
+      }
+      // take into account the last timeout at ping exit
+      if ((data.rc != null) && (stat[ndx].seq == 0)) stat[ndx].data = _incHopDataSent(ndx);
+    }
+  }
+  _futures[ttl - 1] = null; // cleanup its future
+}
+
+void _futuresInRange(String host, int min, int max) {
+  _futureslocked = true;
+  min -= 1; max = (max > _hops) ? _hops : max;
+  for (int i = min; i < max; i++) { // firstly add new ones
+    if (stat[i].ping == null) {
+      int ttl = i + 1;
+      int? cnt = count;
+      if ((stat[i].data.sent > 0) && (cnt != null)) cnt -= stat[i].data.sent;
+      if ((cnt == null) || (cnt > 0)) stat[i].ping = Ping(host, ttl: ttl, count: cnt, dt: timeout, dns: dnsEnable);
+      var p = stat[i].ping;
+      if (p != null) {
+        logger?.p('add ping[ttl=$ttl]');
+        _futures[i] = _readEvents(ttl, p.data);
+      }
+    } else { _futures[i] = null; }
+  }
+  // then stop unused
+  for (int i = 0; i < min; i++) { _stopPingAt(i); }
+  for (int i = max; i < maxTTL; i++) { _stopPingAt(i); }
+  _futureslocked = false;
+}
+
+bool _postclearNote = false;
+
+void _keyActions(String host) {
+  if (_postclearNote) { addnote = null; _postclearNote = false; }
+  switch (getKey()) {
+    case 'd': if (!numeric) dnsEnable = !dnsEnable;
+      logger?.p("action 'dns': dnsEnable=$dnsEnable");
+    case 'h': keyHelp(); showStat(host, stat, _hops);
+      logger?.p("action 'help'");
+    case 'p': pause = !pause; addnote = pause ? ': in pause' : null;
+      logger?.p("action 'pause': pause=$pause");
+    case 'q':
+      logger?.p("action 'quit'");
+      addnote = ': quitting...';
+      for (int i = 0; i < maxTTL; i++) { _stopPingAt(i); }
+    case 'r': _resetStats(); addnote = ': resetting...'; _postclearNote = true;
+    case 't':
+      logger?.p("action 'ttl'");
+      keyTTL();
+      logger?.p('new ttl range: $firstTTL..$lastTTL');
+      _postclearNote = true;
+      _futuresInRange(host, firstTTL, lastTTL);
+      showStat(host, stat, _hops);
+  }
+}
+
+Future<void> pingHops(String host) async {
+  _resetPings();
+  Timer? timer;
+  if (displayMode) timer = Timer.periodic(Duration(seconds: timeout), (_) { showStat(host, stat, _hops); _keyActions(host); });
+  _futuresInRange(host, firstTTL, lastTTL);
+  logger?.p('start $host: count=$count timeout=${timeout}sec dns=$dnsEnable');
+  while (_futures.whereNotNull().isNotEmpty) {
+    await Future.wait(_futures.whereNotNull()); while (_futureslocked) {}
+  }
+  logger?.p('finish $host');
+  if (displayMode) {
+    sleep(Duration(milliseconds: timeout * 1000 ~/ 2));
+    timer?.cancel();
+    showStat(host, stat, _hops);
+    sleep(Duration(milliseconds: 500)); // 0.5sec enough to spot last updates
   }
 }
 
