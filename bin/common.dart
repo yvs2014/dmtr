@@ -6,7 +6,7 @@ import 'syslogger.dart' show Syslogger;
 
 typedef TsUsec = ({int sec, int usec}); // timestamp: sec, usec
 final myname = (Platform.executable == 'dart') ? 'dmtr' : Platform.executable;
-final version = '0.1.8';
+final version = '0.1.27';
 Syslogger? logger;
 String? optstr;
 String? title;
