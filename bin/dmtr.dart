@@ -9,12 +9,12 @@ import 'pinger.dart';
 import 'report.dart';
 import 'json.dart';
 import 'dcurses.dart';
-import 'sysping.dart' show probeSysping;
+import 'sysping.dart' show probeSysping, setSyslogger;
 import 'syslogger.dart' show probeSyslogger, Syslogger;
 
 void usage(String name, help, int indent) {
   final br = sprintf('\n%*s', [indent, '']);
-  print("Usage: $name [-hn] [-c cycles] [-t [minTTL][,maxTTL]] [-w timeout] HOST ...$br${help.replaceAll('\n', br)}");
+  print("Usage: $name [-nrj46h] [-c cycles] [-i interval] [-t [minTTL][,maxTTL]] [--syslog] TARGET ...$br${help.replaceAll('\n', br)}");
   exit(-1);
 }
 
@@ -25,29 +25,23 @@ main(List<String> args) async {
 
   // Parse arguments
   final parser = ArgParser();
-  parser.addOption('count', abbr: 'c', help: 'Run N cycles of pinging a target (default: no limit)', valueHelp: 'cycles');
-  parser.addFlag('numeric', abbr: 'n', help: 'Disable DNS resolve of hops, i.e. numeric output', negatable: false);
-  parser.addFlag('report',  abbr: 'r', help: 'Run N cycles (default $reportCycles) and print plain report at exit', negatable: false);
-  parser.addFlag('json',    abbr: 'j', help: 'Run N cycles (default $reportCycles) and print stats in JSON format', negatable: false);
-  parser.addOption('ttl',   abbr: 't', help: 'TTL range to ping, it can be also min or max only (default $firstTTL,$lastTTL)', valueHelp: 'min,max');
-  parser.addOption('wait',  abbr: 'w', help: 'Wait N seconds for a response (default $timeout)', valueHelp: 'seconds');
+  parser.addOption('cycles',   abbr: 'c', help: 'Run <number> cycles per target (default nolimit)', valueHelp: 'number');
+  parser.addOption('interval', abbr: 'i', help: 'Interval in seconds between pings (default $interval)', valueHelp: 'seconds');
+  parser.addOption('ttl',      abbr: 't', help: 'TTL range to ping, it can be also min or max only (default $firstTTL,$lastTTL)', valueHelp: 'min,max');
+  parser.addFlag('numeric', abbr: 'n', help: 'Numeric output (i.e. disable DNS resolve)', negatable: false);
+  parser.addFlag('report',  abbr: 'r', help: 'Print simple report at exit', negatable: false);
+  parser.addFlag('json',    abbr: 'j', help: 'Print report in JSON format', negatable: false);
+  parser.addFlag('ipv4',    abbr: '4', help: 'IPv4 only', negatable: false);
+  parser.addFlag('ipv6',    abbr: '6', help: 'IPv6 only', negatable: false);
   parser.addFlag('help',    abbr: 'h', help: 'Show help', negatable: false);
   parser.addFlag('syslog',  help: 'Syslog for debug', negatable: false);
   try {
     final parsed = parser.parse(args);
-    if (parsed['count'] != null) {
-      count = int.parse(parsed['count']);
+    if (parsed['numeric'] != null) { numeric = parsed['numeric']; dnsEnable = !numeric; }
+    if (parsed['cycles'] != null) {
+      count = int.parse(parsed['cycles']);
       if ((count ?? 1) <= 0) throw FormatException('Number($count) of cycles must be great than 0');
     }
-    if (parsed['ttl'] != null) {
-      var e = parseMinMaxTTL(parsed['ttl']);
-      if (e != null) throw FormatException(e);
-    }
-    if (parsed['wait'] != null) {
-      timeout = int.parse(parsed['wait']);
-      if (timeout <= 0) throw FormatException("Timeout($timeout) in seconds must be great than 0");
-    }
-    if (parsed['numeric'] != null) { numeric = parsed['numeric']; dnsEnable = !numeric; }
     if (parsed['report'] != null) {
       reportEnable = parsed['report'];
       if (reportEnable) count ??= reportCycles;
@@ -56,14 +50,26 @@ main(List<String> args) async {
       jsonEnable = parsed['json'];
       if (jsonEnable) count ??= reportCycles;
     }
+    if (parsed['ttl'] != null) {
+      var e = parseMinMaxTTL(parsed['ttl']);
+      if (e != null) throw FormatException(e);
+    }
+    if (parsed['interval'] != null) {
+      interval = int.parse(parsed['wait']);
+      if (interval <= 0) throw FormatException("Interval($interval) in seconds must be great than 0");
+    }
+    ipv4only = parsed['ipv4'] ? true : null;
+    ipv6only = parsed['ipv6'] ? true : null;
+    if (parsed['help'] ?? false) usage(myname, parser.usage, 4);
     if (parsed['syslog'] ?? false) {
       { final failed = await probeSyslogger(); if (failed != null) { print(failed); exit(-1); }}
       logger = Syslogger(id: pid, tag: myname);
+      setSyslogger(logger);
     }
-    if (parsed['help'] ?? false) usage(myname, parser.usage, 4);
-    if (parsed.rest.isEmpty) throw FormatException("Target HOST is not set");
+    if (parsed.rest.isEmpty) throw FormatException("TARGET host is not set");
     optstr = args.where((a) => !parsed.rest.contains(a)).join(' ');
     targets = parsed.rest;
+    logger?.p('parsed CLI args: ${parsed.arguments}');
   } catch(e) {
     print("$myname: ${e.toString().split('.')[0]}\n");
     usage(myname, parser.usage, 4);
@@ -94,5 +100,7 @@ main(List<String> args) async {
     var encoder = JsonEncoder.withIndent('  ');
     print(encoder.convert(json));
   }
+  // let it know if there were errors
+  if (errs.isNotEmpty) for (var e in errs) { print('$myname: $e'); }
 }
 

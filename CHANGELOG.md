@@ -1,3 +1,8 @@
+## 0.1.28
+- add error indication at exit
+- add IPvN options [-4 -6]
+- change '-w timeout' to '-i interval' option name
+
 ## 0.1.27
 - shell version-n-changelog generator
 

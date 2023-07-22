@@ -6,8 +6,7 @@ import 'syslogger.dart' show Syslogger;
 
 typedef TsUsec = ({int sec, int usec}); // timestamp: sec, usec
 final myname = (Platform.executable == 'dart') ? 'dmtr' : Platform.executable;
-final version = '0.1.27';
-Syslogger? logger;
+final version = '0.1.28';
 String? optstr;
 String? title;
 String? addnote;
@@ -27,17 +26,24 @@ String? fail;      // message if something went wrong (for example 'unknown host
 const maxTTL = 30; // suppose it's enough for today's internet
 
 // options can be reset with program args, below are defaults
+bool? ipv4only;            // -4
+bool? ipv6only;            // -6
 bool dnsEnable = true;     // -n
+int? count;                // -c count
 bool reportEnable = false; // -r
 bool jsonEnable = false;   // -j
-int timeout = 1;           // -w seconds
-int? count;                // -c count
+int interval = 1;          // -i seconds
 int firstTTL = 1;          // -t minTTL,maxTTL
-int lastTTL = maxTTL;      //
+Syslogger? logger;         // --syslog
+//
 bool numeric = false;      // not toggled dnsEnable
 bool displayMode = true;   // if neither 'reportEnable' nor 'jsonEnable'
-const maxNamesPerHop = 5;
 const reportCycles = 10;   // for a report in json format and a plain one
+int lastTTL = maxTTL;      //
+List<String> errs = [];    // all uniq errors
+
+//
+const maxNamesPerHop = 5;
 const unreachMesg = 'Destination is unreachable';
 
 class Hop {
@@ -70,4 +76,5 @@ const twoDigitsUpto = 0.1;
 String prfmt(double v) => sprintf('%.*f', [((v > 0) && (v < floatUpto)) ? ((v < twoDigitsUpto) ? 2 : 1) : 0, v]);
 void setTitle(String host) { title = ['$myname-$version', optstr, host].where((a) => (a != null) && a.isNotEmpty).join(' '); }
 void cleanNonStat(Hop h) { h.ping = h.ts = h.prtt = null; h.seq = -1; h.unreach = false; }
+void addGlobalErr(String e) { if (!errs.contains(e)) errs.add(e); }
 

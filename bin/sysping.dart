@@ -3,10 +3,14 @@ import 'dart:io' show Platform, Process, ProcessSignal, ProcessException;
 import 'dart:async' show StreamController, StreamSubscription, StreamTransformer;
 import 'dart:convert' show Utf8Decoder, LineSplitter;
 import 'package:async/async.dart' show StreamGroup;
+import 'syslogger.dart' show Syslogger;
 
-enum Status { undefined, success, discard, timeout, unknown }
+enum Status { undefined, success, discard, timeout, unknown, error }
 const _utfenv = {'LC_ALL': 'C.UTF-8'};
 const _sysping = 'ping';
+Syslogger? _logger;
+
+void setSyslogger(Syslogger? logger) { _logger = logger; }
 
 Future<dynamic> probeSysping() async {
   try { Process.runSync(_sysping, []); }
@@ -37,17 +41,21 @@ final Map<Status, _TrRegexp> _tre = { // regexps for transformer
     match: RegExp(r'^\[(?<ts>[0-9.]+)\] From (((?<name>.*) \((?<addr>.*)\))|(?<ip>.*)) icmp_seq=(?<seq>\d+) (?<mesg>.*)')),
   Status.timeout: (contain: RegExp(r'no answer yet'),
     match: RegExp(r'^\[(?<ts>[0-9.]+)\] .*icmp_seq=(?<seq>\d+)')),
-  Status.unknown: (contain: RegExp(r'nknown host|ervice not known|ailure in name'), match: null),
+  Status.unknown: (contain: RegExp(r'nknown host|ervice not known|ailure in name'),
+    match: null),
+  Status.error: (contain: RegExp(r'^' + _sysping + r': .*:'),
+    match: RegExp(r'^' + _sysping + r': .*: (?<err>.*)$')),
 };
 
 
 class Ping {
-  Ping(host, { int? count, int dt = 1, int ttl = 30, bool dns = true, bool ipv6 = false}) {
+  Ping(host, { int interval = 1, int ttl = 30, int? count, bool? numeric, bool? ipv4, bool? ipv6}) {
     if (!Platform.isLinux) throw Exception("Platform '${Platform.operatingSystem}' is not supported");
-    _args.addAll(['-i $dt', '-W $dt', '-t $ttl']);
+    _args.addAll(['-i $interval', '-W $interval', '-t $ttl']);
     if (count != null) _args.add('-c $count');
-    if (!dns) _args.add('-n');
-    if (ipv6) _args.add('-6');
+    if (numeric ?? false) _args.add('-n');
+    if (ipv4 ?? false) _args.add('-4');
+    if (ipv6 ?? false) _args.add('-6');
     _args.add(host);
     _cntr = StreamController<Data>(
       onListen: _onListen,
@@ -59,6 +67,7 @@ class Ping {
 
   late Process _process;
   final List<String> _args = ['-OD'];
+  List<String> get args => _args;
 
   late final StreamController<Data> _cntr;
   final StreamTransformer<String, Data> _tf = transformer;
@@ -72,7 +81,14 @@ class Ping {
     _process = await Process.start(_sysping, _args, environment: _utfenv);
     _sub = _datastream.listen((ev) => _cntr.add(ev), onDone: _done);
   }
-  Future<void> _done() async { if (!_cntr.isClosed) { _cntr.add(Data(rc: await _process.exitCode)); await _cntr.close(); }}
+  Future<void> _done() async {
+    if (!_cntr.isClosed) {
+      var rc = await _process.exitCode;
+      if (rc != 0) _logger?.p('$_sysping rc=$rc $args');
+      _cntr.add(Data(rc: rc));
+      await _cntr.close();
+    }
+  }
 
   Future<bool> stop() async {
     bool rc = _process.kill(ProcessSignal.sigint);
@@ -88,7 +104,8 @@ StreamTransformer<String, Data> get transformer => StreamTransformer<String, Dat
     if (_withStatus(data, sink, Status.discard)) return;
     if (_withStatus(data, sink, Status.timeout)) return;
     if (_tre.containsKey(Status.unknown) && data.contains(_tre[Status.unknown]!.contain))
-      { sink.add(Data(status: Status.unknown, mesg: data)); } // Unknowm
+      { sink.add(Data(status: Status.unknown, mesg: data)); }
+    if (_withStatus(data, sink, Status.error)) return;
     // sink.add(Data(status: Status.undefined, mesg: data)); // Other
   }
 );
@@ -103,7 +120,8 @@ bool _withStatus(data, sink, Status status) {
       case Status.success: _fnSuccess(data, sink, match);
       case Status.discard: _fnDiscard(data, sink, match);
       case Status.timeout: _fnTimeout(data, sink, match);
-	  default: {}
+      case Status.error:   _fnError(data, sink, match);
+      default: {}
     }
   }
   return true;
@@ -145,4 +163,7 @@ void _fnTimeout(data, sink, match) {
     mesg: 'timeout',
   ));
 }
+
+void _fnError(data, sink, match) =>
+  sink.add(Data(status: Status.error, mesg: match.groupNames.contains('err') ? match.namedGroup('err') : null));
 

@@ -136,8 +136,10 @@ Future<void> _readEvents(int ttl, var stream) async {
           for (int i = 0; i < maxTTL; i++) { stat[i].ping?.stop(); }
           fail = data.mesg?.replaceFirst('ping: ', '');
           return;
-//        case Status.error:
-//          fail = 'Got error: ${data.mesg}';
+        case Status.error:
+          var emesg = (data.mesg != null) ? ': ${data.mesg}' : '';
+          logger?.p('Got error$emesg');
+          if (data.mesg != null) addGlobalErr(data.mesg);
       }
       // take into account the last timeout at ping exit
       if ((data.rc != null) && (stat[ndx].seq == 0)) stat[ndx].data = _incHopDataSent(ndx);
@@ -154,11 +156,12 @@ void _futuresInRange(String host, int min, int max) {
       int ttl = i + 1;
       int? cnt = count;
       if ((stat[i].data.sent > 0) && (cnt != null)) cnt -= stat[i].data.sent;
-      if ((cnt == null) || (cnt > 0)) stat[i].ping = Ping(host, ttl: ttl, count: cnt, dt: timeout, dns: dnsEnable);
-      var p = stat[i].ping;
+      Ping? p;
+      if ((cnt == null) || (cnt > 0)) p = Ping(host, interval: interval, ttl: ttl, count: cnt, numeric: !dnsEnable, ipv4: ipv4only, ipv6: ipv6only);
       if (p != null) {
-        logger?.p('add ping[ttl=$ttl]');
+        stat[i].ping = p;
         _futures[i] = _readEvents(ttl, p.data);
+        logger?.p('add ping[$i] ${p.args}');
       }
     } else { _futures[i] = null; }
   }
@@ -198,17 +201,17 @@ Future<void> pingHops(String host) async {
   _resetPings();
   Timer? pingTimer, kbdTimer;
   if (displayMode) {
-    pingTimer = Timer.periodic(Duration(seconds: timeout), (_) => showStat(host, stat, _hops));
+    pingTimer = Timer.periodic(Duration(seconds: interval), (_) => showStat(host, stat, _hops));
     kbdTimer = Timer.periodic(Duration(milliseconds: 100), (_) => _keyActions(host));
   }
   _futuresInRange(host, firstTTL, lastTTL);
-  logger?.p('start $host: count=$count timeout=${timeout}sec dns=$dnsEnable');
+  logger?.p("ping '$host' is started (interval=${interval}sec cycles=${count ?? 'nolimit'})");
   while (_futures.whereNotNull().isNotEmpty) {
     await Future.wait(_futures.whereNotNull()); while (_futureslocked) {}
   }
-  logger?.p('finish $host');
+  logger?.p("ping '$host' is finished");
   if (displayMode) {
-    sleep(Duration(milliseconds: timeout * 1000 ~/ 2));
+    sleep(Duration(milliseconds: interval * 1000 ~/ 2));
     pingTimer?.cancel();
     kbdTimer?.cancel();
     showStat(host, stat, _hops);
