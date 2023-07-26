@@ -1,5 +1,5 @@
 
-import 'dart:io' show exit, sleep, pid;
+import 'dart:io' show exit, pid;
 import 'dart:convert' show JsonEncoder;
 import 'package:sprintf/sprintf.dart';
 import 'package:args/args.dart' show ArgParser;
@@ -9,7 +9,7 @@ import 'pinger.dart';
 import 'report.dart';
 import 'json.dart';
 import 'dcurses.dart';
-import 'sysping.dart' show probeSysping, setSyslogger;
+import 'sysping.dart' show probeSysping;
 import 'syslogger.dart' show probeSyslogger, Syslogger;
 
 void usage(String name, help, int indent) {
@@ -64,7 +64,6 @@ main(List<String> args) async {
     if (parsed['syslog'] ?? false) {
       { final failed = await probeSyslogger(); if (failed != null) { print(failed); exit(-1); }}
       logger = Syslogger(id: pid, tag: myname);
-      setSyslogger(logger);
     }
     if (parsed.rest.isEmpty) throw FormatException("TARGET host is not set");
     optstr = args.where((a) => !parsed.rest.contains(a)).join(' ');
@@ -79,28 +78,26 @@ main(List<String> args) async {
   if (displayMode && !openDisplay()) return -1;
   List json = [];
   for (var i = 0; i < targets.length; i++) { // note: one by one, not async
-    fail = null;
     setTitle(targets[i]);
     await pingHops(targets[i]); // Run main loop
-    if (displayMode && (fail != null)) { addnote = '($fail)'; printTitle(0, 0, up: true);
-      sleep(Duration(seconds: 3)); addnote = null;}
     if (reportEnable) { // Print plain report
       logger?.p('print plain report');
       if (i != 0) print('');
       String now = '${DateTime.now()}';
       now = now.substring(0, now.indexOf('.'));
-      if (fail != null) { print('[$now] $fail'); }
+      if (fails.isNotEmpty) { print('[$now] ${fails.join(", ")}'); fails = []; }
       else { print("[$now] $title"); printReport(stat, hops); }
     }
     if (jsonEnable) json.add(getMappedHops(stat, hops, targets[i])); // Add mapped stats for a target
   }
-  if (displayMode) closeDisplay();
+  if (displayMode) {
+    closeDisplay();
+    if (fails.isNotEmpty) for (var e in fails) { print('$myname: $e'); }
+  }
   if (jsonEnable) { // Print report in JSON format
     logger?.p('print stats in json format');
     var encoder = JsonEncoder.withIndent('  ');
     print(encoder.convert(json));
   }
-  // let it know if there were errors
-  if (errs.isNotEmpty) for (var e in errs) { print('$myname: $e'); }
 }
 

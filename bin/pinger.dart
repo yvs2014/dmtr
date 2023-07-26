@@ -27,10 +27,12 @@ void _resetStats() {
   maxHostaddr = maxHostname = 0;
 }
 
-void _stopPingAt(int at) {
-  if (stat[at].ping == null) return;
-  logger?.p('stop ping[ttl=${at + 1}]');
-  stat[at].ping?.stop();
+void _stopPingAt(int at, String reason) {
+  var p = stat[at].ping;
+  if (p != null) {
+    logger?.p('stop ping[${at + 1}], reason: $reason');
+    p.stop();
+  }
   cleanNonStat(stat[at]);
   _futures[at] = null;
 }
@@ -108,47 +110,47 @@ int _ndxBackOfUnreach(int ndx) {
   return 0;
 }
 
-Future<void> _readEvents(int ttl, var stream) async {
+Future<void> _readData(int ttl, Stream<Data> stream) async {
+  int ndx = ttl - 1;
   await for (final data in stream) {
-    if (data != null) {
-      int ndx = ttl - 1;
-      if (stat[ndx].ping == null) continue; // it's already stopped, don't stat it
-      switch (data.status) {
-        case Status.success:
-          if ((data.ttl != null) && (_hops > ttl)) { // 'data.ttl' is only at target
-            _hops = ttl; // stop pings at this ttl
-            for (int i = _hops; i < maxTTL; i++) { _stopPingAt(i); }
-          }
-          _setHopData(ndx, data);
-        case Status.discard:
-          _setHopData(ndx, data);
-          if (data.mesg?.contains('nreachable') || false) {
-            stat[ndx].unreach = true;
-            int lastndx = (lastTTL < _hops) ? lastTTL : _hops;
-            if ((lastndx == ttl) && (lastndx > 0)) _hops = _ndxBackOfUnreach(ndx) + 1;
-          }
-        case Status.timeout:
-          if (stat[ndx].seq != data.seq) stat[ndx].data = _incHopDataSent(ndx);
-          stat[ndx].seq = 0;
-          stat[ndx].ts = (data.ts != null) ? _parseTS(data.ts) : null; // keep timestamp for possible future discards
-        case Status.unknown: // unknown host: stop all pings
-          _hops = 0;
-          for (int i = 0; i < maxTTL; i++) { stat[i].ping?.stop(); }
-          fail = data.mesg?.replaceFirst('ping: ', '');
-          return;
-        case Status.error:
-          var emesg = (data.mesg != null) ? ': ${data.mesg}' : '';
-          logger?.p('Got error$emesg');
-          if (data.mesg != null) addGlobalErr(data.mesg);
-      }
-      // take into account the last timeout at ping exit
-      if ((data.rc != null) && (stat[ndx].seq == 0)) stat[ndx].data = _incHopDataSent(ndx);
+    if (stat[ndx].ping == null) continue; // it's already stopped, don't stat it
+    switch (data.status) {
+      case Status.success:
+        if ((data.ttl != null) && (_hops > ttl)) { // 'data.ttl' is only at target
+          _hops = ttl; // stop pings at this ttl
+          for (int i = _hops; i < maxTTL; i++) { _stopPingAt(i, 'success at ttl=$ttl'); }
+        }
+        _setHopData(ndx, data);
+      case Status.discard:
+        _setHopData(ndx, data);
+        if (data.mesg?.contains('nreachable') ?? false) {
+          stat[ndx].unreach = true;
+          int lastndx = (lastTTL < _hops) ? lastTTL : _hops;
+          if ((lastndx == ttl) && (lastndx > 0)) _hops = _ndxBackOfUnreach(ndx) + 1;
+        }
+      case Status.timeout:
+        if (stat[ndx].seq != data.seq) stat[ndx].data = _incHopDataSent(ndx);
+        stat[ndx].seq = 0;
+        var ts = data.ts;
+        stat[ndx].ts = (ts != null) ? _parseTS(ts) : null; // keep timestamp for possible future discards
+      case Status.unknown: // unknown host
+        _hops = 0;
+        _stopPingAt(ndx, 'got unknown at=$ndx');
+        addFailMesg(data.mesg);
+      case Status.error: // collect them
+        addFailMesg(data.mesg);
+      default: {}
+    }
+    // take into account the last timeout at ping exit
+    if ((data.rc != null) && (stat[ndx].seq == 0)) {
+      stat[ndx].data = _incHopDataSent(ndx);
+      logger?.p('ping[$ttl] finished');
     }
   }
-  _futures[ttl - 1] = null; // cleanup its future
+  _futures[ndx] = null; // cleanup when completed
 }
 
-void _futuresInRange(String host, int min, int max) {
+Future<void> _futuresInRange(String host, int min, int max) async {
   _futureslocked = true;
   min -= 1; max = (max > _hops) ? _hops : max;
   for (int i = min; i < max; i++) { // firstly add new ones
@@ -160,14 +162,15 @@ void _futuresInRange(String host, int min, int max) {
       if ((cnt == null) || (cnt > 0)) p = Ping(host, interval: interval, ttl: ttl, count: cnt, numeric: !dnsEnable, ipv4: ipv4only, ipv6: ipv6only);
       if (p != null) {
         stat[i].ping = p;
-        _futures[i] = _readEvents(ttl, p.data);
+        _futures[i] = _readData(ttl, p.data);
         logger?.p('add ping[$i] ${p.args}');
-      }
-    } else { _futures[i] = null; }
+      } else { _futures[i] = null; }
+    }
   }
   // then stop unused
-  for (int i = 0; i < min; i++) { _stopPingAt(i); }
-  for (int i = max; i < maxTTL; i++) { _stopPingAt(i); }
+  for (int i = 0; i < min; i++) { _stopPingAt(i, 'ndx < min(${min + 1})'); }
+  for (int i = max; i < maxTTL; i++) { _stopPingAt(i, 'ndx > max($max)'); }
+  logger?.p('${_futures.whereNotNull().length} pings in total');
   _futureslocked = false;
 }
 
@@ -180,12 +183,12 @@ void _keyActions(String host) {
       logger?.p("action 'dns': dnsEnable=$dnsEnable");
     case 'h': keyHelp(); showStat(host, stat, _hops);
       logger?.p("action 'help'");
-    case 'p': pause = !pause; addnote = pause ? ': in pause' : null;
+    case 'p': pause = !pause; addnote = pause ? ': output in pause' : null;
       logger?.p("action 'pause': pause=$pause");
     case 'q':
       logger?.p("action 'quit'");
       addnote = ': quitting...';
-      for (int i = 0; i < maxTTL; i++) { _stopPingAt(i); }
+      for (int i = 0; i < maxTTL; i++) { _stopPingAt(i, 'quit'); }
     case 'r': _resetStats(); addnote = ': resetting...'; _postclearNote = true;
     case 't':
       logger?.p("action 'ttl'");
@@ -204,10 +207,12 @@ Future<void> pingHops(String host) async {
     pingTimer = Timer.periodic(Duration(seconds: interval), (_) => showStat(host, stat, _hops));
     kbdTimer = Timer.periodic(Duration(milliseconds: 100), (_) => _keyActions(host));
   }
-  _futuresInRange(host, firstTTL, lastTTL);
+  await _futuresInRange(host, firstTTL, lastTTL);
   logger?.p("ping '$host' is started (interval=${interval}sec cycles=${count ?? 'nolimit'})");
   while (_futures.whereNotNull().isNotEmpty) {
-    await Future.wait(_futures.whereNotNull()); while (_futureslocked) {}
+    logger?.p('waitlist of ${_futures.whereNotNull().length} pings');
+    await Future.wait(_futures.whereNotNull());
+    while (_futureslocked) {}
   }
   logger?.p("ping '$host' is finished");
   if (displayMode) {

@@ -38,13 +38,13 @@ String? parseMinMaxTTL(String s) {
     if (mm.isNotEmpty) {
       if (mm[0].isNotEmpty) {
         int n = int.parse(mm[0]);
-        if ((n > 0) && (n < maxTTL)) { firstTTL = n; }
+        if ((n > 0) && (n <= maxTTL)) { firstTTL = n; }
         else { return 'Min TTL ($n) is out of range 1..$maxTTL'; }
       }
       if ((mm.length > 1) && mm[1].isNotEmpty) {
         int n = int.parse(mm[1]);
-        if ((n >= firstTTL) && (n < maxTTL)) { lastTTL = n; }
-        else { return 'Max TTL ($n) is out of range $firstTTL..$lastTTL'; }
+        if ((n >= firstTTL) && (n <= maxTTL)) { lastTTL = n; }
+        else { return 'Max TTL ($n) is out of range $firstTTL..$maxTTL'; }
       }
     }
   } catch (e) { return '$e'; }
@@ -149,6 +149,7 @@ int printTitle(int y0, int w, {bool over = false, bool up = false}) {
 }
 
 void showStat(String host, List<Hop> stat, int hops) {
+  if (!displayMode) return;
   int w = cols - (lindent + statMax + 2);
   if (pause) { printTitle(0, w, over: true); }
   else {

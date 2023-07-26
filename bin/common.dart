@@ -6,7 +6,7 @@ import 'syslogger.dart' show Syslogger;
 
 typedef TsUsec = ({int sec, int usec}); // timestamp: sec, usec
 final myname = (Platform.executable == 'dart') ? 'dmtr' : Platform.executable;
-final version = '0.1.28';
+final version = '0.1.29';
 String? optstr;
 String? title;
 String? addnote;
@@ -16,14 +16,14 @@ bool gotdata = false; // true after getting any first reply
 // as a record to be synced
 typedef HopData = ({int sent, int rcvd, int last, int best, int wrst, double avg, double jttr}); // last,best,wrst,avg in usec
 
+const maxTTL = 30; // suppose it's enough for today's internet
 final hostTitle = 'Hops'; // left(host) part of output
 const _statfmt = '%-4s %-5s %-4s %-4s %-4s  %-4s %-4s';
 final statTitle = sprintf(_statfmt, ['Loss', 'Sent', 'Last', 'Best', 'Wrst', 'Avrg', 'Jttr']);
 final statMax = sprintf(_statfmt, List<String>.filled(7, '')).length;
 int maxHostaddr = 0, maxHostname = 0;
 const lindent = 4; // lpart's indent
-String? fail;      // message if something went wrong (for example 'unknown host')
-const maxTTL = 30; // suppose it's enough for today's internet
+List<String?> fails = []; // message(s) if something went wrong (for example 'unknown host')
 
 // options can be reset with program args, below are defaults
 bool? ipv4only;            // -4
@@ -40,7 +40,6 @@ bool numeric = false;      // not toggled dnsEnable
 bool displayMode = true;   // if neither 'reportEnable' nor 'jsonEnable'
 const reportCycles = 10;   // for a report in json format and a plain one
 int lastTTL = maxTTL;      //
-List<String> errs = [];    // all uniq errors
 
 //
 const maxNamesPerHop = 5;
@@ -76,5 +75,5 @@ const twoDigitsUpto = 0.1;
 String prfmt(double v) => sprintf('%.*f', [((v > 0) && (v < floatUpto)) ? ((v < twoDigitsUpto) ? 2 : 1) : 0, v]);
 void setTitle(String host) { title = ['$myname-$version', optstr, host].where((a) => (a != null) && a.isNotEmpty).join(' '); }
 void cleanNonStat(Hop h) { h.ping = h.ts = h.prtt = null; h.seq = -1; h.unreach = false; }
-void addGlobalErr(String e) { if (!errs.contains(e)) errs.add(e); }
+void addFailMesg(String? m) { if ((m != null) && !fails.contains(m)) fails.add(m); }
 

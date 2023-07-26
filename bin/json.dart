@@ -8,7 +8,7 @@ Map<String, dynamic> getMappedHops(List<Hop> stat, int hops, String host) {
     for (int i = firstTTL - 1; i < end; i++) { all.add(_hop2map(stat[i], i + 1)); }
   }
   var map = { 'target': host, 'stats': all };
-  if (fail != null) map['fail'] = fail!;
+  if (fails.isNotEmpty) { map['fail'] = fails; fails = []; }
   return map;
 }
 

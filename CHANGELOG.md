@@ -1,3 +1,7 @@
+## 0.1.29
+- rearrange waitlist filling
+- add more syslog messages
+
 ## 0.1.28
 - add error indication at exit
 - add IPvN options [-4 -6]

@@ -3,14 +3,11 @@ import 'dart:io' show Platform, Process, ProcessSignal, ProcessException;
 import 'dart:async' show StreamController, StreamSubscription, StreamTransformer;
 import 'dart:convert' show Utf8Decoder, LineSplitter;
 import 'package:async/async.dart' show StreamGroup;
-import 'syslogger.dart' show Syslogger;
+import 'common.dart' show logger;
 
 enum Status { undefined, success, discard, timeout, unknown, error }
 const _utfenv = {'LC_ALL': 'C.UTF-8'};
 const _sysping = 'ping';
-Syslogger? _logger;
-
-void setSyslogger(Syslogger? logger) { _logger = logger; }
 
 Future<dynamic> probeSysping() async {
   try { Process.runSync(_sysping, []); }
@@ -42,17 +39,17 @@ final Map<Status, _TrRegexp> _tre = { // regexps for transformer
   Status.timeout: (contain: RegExp(r'no answer yet'),
     match: RegExp(r'^\[(?<ts>[0-9.]+)\] .*icmp_seq=(?<seq>\d+)')),
   Status.unknown: (contain: RegExp(r'nknown host|ervice not known|ailure in name'),
-    match: null),
-  Status.error: (contain: RegExp(r'^' + _sysping + r': .*:'),
-    match: RegExp(r'^' + _sysping + r': .*: (?<err>.*)$')),
+    match: RegExp(r'^' + _sysping + r': (?<unkn>.*)$')),
+  Status.error: (contain: RegExp(r'^' + _sysping + r': '),
+    match: RegExp(r'^' + _sysping + r': (?<err>.*)$')),
 };
 
 
 class Ping {
-  Ping(host, { int interval = 1, int ttl = 30, int? count, bool? numeric, bool? ipv4, bool? ipv6}) {
+  Ping(this.host, { this.interval = 1, this.ttl = 30, this.count, this.numeric, this.ipv4, this.ipv6}) {
     if (!Platform.isLinux) throw Exception("Platform '${Platform.operatingSystem}' is not supported");
-    _args.addAll(['-i $interval', '-W $interval', '-t $ttl']);
-    if (count != null) _args.add('-c $count');
+    _args.addAll(['-i$interval', '-W$interval', '-t$ttl']);
+    if (count != null) _args.add('-c$count');
     if (numeric ?? false) _args.add('-n');
     if (ipv4 ?? false) _args.add('-4');
     if (ipv6 ?? false) _args.add('-6');
@@ -65,46 +62,51 @@ class Ping {
     );
   }
 
-  late Process _process;
   final List<String> _args = ['-OD'];
   List<String> get args => _args;
+  String host;
+  int? interval;
+  int? ttl;
+  int? count;
+  bool? numeric;
+  bool? ipv4;
+  bool? ipv6;
 
-  late final StreamController<Data> _cntr;
-  final StreamTransformer<String, Data> _tf = transformer;
-  Stream<Data> get _datastream => StreamGroup.merge([_process.stderr, _process.stdout])
-    .transform(Utf8Decoder()).transform(LineSplitter()).transform<Data>(_tf);
-
-  late final StreamSubscription<Data> _sub;
+  late Process _process;
+  late StreamController<Data> _cntr;
+  late StreamSubscription<Data> _sub;
   Stream<Data> get data => _cntr.stream;
 
   Future<void> _onListen() async {
     _process = await Process.start(_sysping, _args, environment: _utfenv);
-    _sub = _datastream.listen((ev) => _cntr.add(ev), onDone: _done);
+    _sub = StreamGroup.merge([_process.stderr, _process.stdout])
+      .transform(Utf8Decoder()).transform(LineSplitter()).transform<Data>(_transformer)
+      .listen((ev) => _cntr.add(ev), onDone: _done);
   }
+
   Future<void> _done() async {
+    var rc = await _process.exitCode;
     if (!_cntr.isClosed) {
-      var rc = await _process.exitCode;
-      if (rc != 0) _logger?.p('$_sysping rc=$rc $args');
       _cntr.add(Data(rc: rc));
       await _cntr.close();
     }
+    logger?.p('ping[$ttl] finished (rc=$rc)');
   }
 
   Future<bool> stop() async {
-    bool rc = _process.kill(ProcessSignal.sigint);
-    if (rc) await _cntr.done;
-    return rc;
+    bool re = _process.kill(ProcessSignal.sigint);
+    if (re && !_cntr.isClosed) await _cntr.done;
+    return re;
   }
 }
 
 
-StreamTransformer<String, Data> get transformer => StreamTransformer<String, Data>.fromHandlers(
+StreamTransformer<String, Data> get _transformer => StreamTransformer<String, Data>.fromHandlers(
   handleData: (data, sink) {
     if (_withStatus(data, sink, Status.success)) return;
     if (_withStatus(data, sink, Status.discard)) return;
     if (_withStatus(data, sink, Status.timeout)) return;
-    if (_tre.containsKey(Status.unknown) && data.contains(_tre[Status.unknown]!.contain))
-      { sink.add(Data(status: Status.unknown, mesg: data)); }
+    if (_withStatus(data, sink, Status.unknown)) return;
     if (_withStatus(data, sink, Status.error)) return;
     // sink.add(Data(status: Status.undefined, mesg: data)); // Other
   }
@@ -120,6 +122,7 @@ bool _withStatus(data, sink, Status status) {
       case Status.success: _fnSuccess(data, sink, match);
       case Status.discard: _fnDiscard(data, sink, match);
       case Status.timeout: _fnTimeout(data, sink, match);
+      case Status.unknown: _fnUnknown(data, sink, match);
       case Status.error:   _fnError(data, sink, match);
       default: {}
     }
@@ -163,6 +166,9 @@ void _fnTimeout(data, sink, match) {
     mesg: 'timeout',
   ));
 }
+
+void _fnUnknown(data, sink, match) =>
+  sink.add(Data(status: Status.unknown, mesg: match.groupNames.contains('unkn') ? match.namedGroup('unkn') : null));
 
 void _fnError(data, sink, match) =>
   sink.add(Data(status: Status.error, mesg: match.groupNames.contains('err') ? match.namedGroup('err') : null));
