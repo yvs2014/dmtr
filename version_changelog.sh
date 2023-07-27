@@ -10,7 +10,7 @@ BACKUP=yes
 CHANGELOG='CHANGELOG.md'
 FILE1='pubspec.yaml'
 PATT1='version:'
-FILE2='bin/common.dart'
+FILE2='bin/params.dart'
 PATT2='final version ='
 
 

@@ -1,6 +1,8 @@
 
 import 'package:sprintf/sprintf.dart' show sprintf;
 import 'common.dart';
+import 'params.dart';
+import 'aux.dart';
 
 void printReport(List<Hop> stat, int hops) {
   if (hops > 0) {

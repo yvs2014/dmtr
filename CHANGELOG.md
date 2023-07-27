@@ -1,3 +1,6 @@
+## 0.1.30
+- add -s option (payload size)
+
 ## 0.1.29
 - rearrange waitlist filling
 - add more syslog messages

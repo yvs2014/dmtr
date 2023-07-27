@@ -4,19 +4,13 @@ import 'dart:convert' show utf8;
 import 'package:sprintf/sprintf.dart' show sprintf;
 import 'libncurses.dart';
 import 'common.dart';
+import 'params.dart';
+import 'aux.dart';
+
+const _kEnter = 10;
+const _kBackspace = 127;
 
 late Voidptr _win;
-
-typedef _KeyHint = ({String key, String hint});
-List<_KeyHint> _keyhints = [
-  (key: 'help',  hint: 'this help'),
-  (key: 'dns',   hint: 'toggle hostname/ipaddr show (note: on linux it works only in non-numeric mode)'),
-  (key: 'ttl',   hint: 'set ttl range in min,max format [TODO]'),
-  (key: 'reset', hint: 'reset stats'),
-  (key: 'pause', hint: 'pause/resume'),
-  (key: 'quit',  hint: 'stop and exit'),
-];
-int _maxHKey = _keyhints.reduce((a, b) { return a.key.length > b.key.length ? a : b; }).key.length;
 
 bool openDisplay() {
   _win = initscr();
@@ -32,25 +26,6 @@ bool openDisplay() {
 
 void closeDisplay() { addstr('\n'); refresh(); endwin(); }
 
-String? parseMinMaxTTL(String s) {
-  try {
-    var mm = s.split(',');
-    if (mm.isNotEmpty) {
-      if (mm[0].isNotEmpty) {
-        int n = int.parse(mm[0]);
-        if ((n > 0) && (n <= maxTTL)) { firstTTL = n; }
-        else { return 'Min TTL ($n) is out of range 1..$maxTTL'; }
-      }
-      if ((mm.length > 1) && mm[1].isNotEmpty) {
-        int n = int.parse(mm[1]);
-        if ((n >= firstTTL) && (n <= maxTTL)) { lastTTL = n; }
-        else { return 'Max TTL ($n) is out of range $firstTTL..$maxTTL'; }
-      }
-    }
-  } catch (e) { return '$e'; }
-  return null;
-}
-
 String? getKey() {
   int c = getch();
   return (c > 0) ? String.fromCharCode(c) : null;
@@ -59,9 +34,9 @@ String? getKey() {
 void keyHelp() {
   pause = true;
   clear();
-  int ind = 2, y = 2, x0 = 1, x = x0 + ind + _maxHKey + 2;
+  int ind = 2, y = 2, x0 = 1, x = x0 + ind + maxHKey + 2;
   mvaddstr(y++, x0, 'Keys:');
-  for (var h in _keyhints) {
+  for (var h in keyhints) {
     if (h.key.isNotEmpty) {
       attron(aBold); mvaddstr(y, x0 + ind, h.key[0]); attroff(aBold);
       if (h.key.length > 1) addstr(h.key.substring(1));
@@ -75,11 +50,10 @@ void keyHelp() {
   pause = false;
 }
 
-const _kEnter = 10;
-const _kBackspace = 127;
+typedef _InputFn = (String?, String?) Function(String input);
 
-void keyTTL() {
-  const prompt = 'Enter TTL range: ';
+void _getInput(String what, _InputFn fn) {
+  final prompt = 'Enter $what: ';
   pause = true;
   clear();
   int y = 2, x = 1;
@@ -103,12 +77,15 @@ void keyTTL() {
   }
   noecho();
   if (input.isNotEmpty) {
-    var e = parseMinMaxTTL(utf8.decode(input).trim());
-    if (e == null) { addnote = 'TTL range: $firstTTL..$lastTTL'; }
-    else { mvaddstr(y + 2, x, 'ERROR: $e'); refresh(); sleep(Duration(seconds: 3)); }
+    var (e, a) = fn(utf8.decode(input).trim());
+    if (a != null) addnote = '$what: $a';
+    if (e != null) { mvaddstr(y + 2, x, 'ERROR: $e'); refresh(); sleep(Duration(seconds: 3)); }
   }
   pause = false;
 }
+
+void keyTTL() => _getInput('TTL range', parseTTL);
+void keySize() => _getInput('payload size', parsePsize);
 
 int printTitle(int y0, int w, {bool over = false, bool up = false}) {
   int y = y0;
@@ -128,7 +105,7 @@ int printTitle(int y0, int w, {bool over = false, bool up = false}) {
   else {
     { // print 'Keys Datetime' line
       mvaddstr(y, 1, 'Keys:');
-      for (var h in _keyhints) {
+      for (var h in keyhints) {
         if (h.key.isNotEmpty) {
           attron(aBold); addstr(' ${h.key[0]}'); attroff(aBold);
           if (h.key.length > 1) addstr(h.key.substring(1));

@@ -3,7 +3,7 @@ import 'dart:io' show Platform, Process, ProcessSignal, ProcessException;
 import 'dart:async' show StreamController, StreamSubscription, StreamTransformer;
 import 'dart:convert' show Utf8Decoder, LineSplitter;
 import 'package:async/async.dart' show StreamGroup;
-import 'common.dart' show logger;
+import 'params.dart' show logger;
 
 enum Status { undefined, success, discard, timeout, unknown, error }
 const _utfenv = {'LC_ALL': 'C.UTF-8'};
@@ -46,10 +46,11 @@ final Map<Status, _TrRegexp> _tre = { // regexps for transformer
 
 
 class Ping {
-  Ping(this.host, { this.interval = 1, this.ttl = 30, this.count, this.numeric, this.ipv4, this.ipv6}) {
+  Ping(this.host, { int? count, interval = 1, int? size, this.ttl = 30, bool? numeric, bool? ipv4, bool? ipv6}) {
     if (!Platform.isLinux) throw Exception("Platform '${Platform.operatingSystem}' is not supported");
     _args.addAll(['-i$interval', '-W$interval', '-t$ttl']);
     if (count != null) _args.add('-c$count');
+    if (size != null) _args.add('-s$size');
     if (numeric ?? false) _args.add('-n');
     if (ipv4 ?? false) _args.add('-4');
     if (ipv6 ?? false) _args.add('-6');
@@ -65,12 +66,7 @@ class Ping {
   final List<String> _args = ['-OD'];
   List<String> get args => _args;
   String host;
-  int? interval;
   int? ttl;
-  int? count;
-  bool? numeric;
-  bool? ipv4;
-  bool? ipv6;
 
   late Process _process;
   late StreamController<Data> _cntr;

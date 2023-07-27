@@ -1,5 +1,7 @@
 
 import 'common.dart';
+import 'params.dart';
+import 'aux.dart' show fails;
 
 Map<String, dynamic> getMappedHops(List<Hop> stat, int hops, String host) {
   List<Map<String, dynamic>> all = [];

@@ -1,47 +1,16 @@
 
-import 'dart:io' show Platform;
 import 'package:sprintf/sprintf.dart' show sprintf;
 import 'sysping.dart' show Ping;
-import 'syslogger.dart' show Syslogger;
+import 'params.dart';
+import 'aux.dart';
 
 typedef TsUsec = ({int sec, int usec}); // timestamp: sec, usec
-final myname = (Platform.executable == 'dart') ? 'dmtr' : Platform.executable;
-final version = '0.1.29';
-String? optstr;
-String? title;
-String? addnote;
-bool pause = false;
-bool gotdata = false; // true after getting any first reply
 
-// as a record to be synced
-typedef HopData = ({int sent, int rcvd, int last, int best, int wrst, double avg, double jttr}); // last,best,wrst,avg in usec
+// Data per hop (as a record to be synced)
+// note: last,best,wrst,avg in usec
+typedef HopData = ({int sent, int rcvd, int last, int best, int wrst, double avg, double jttr});
 
-const maxTTL = 30; // suppose it's enough for today's internet
-final hostTitle = 'Hops'; // left(host) part of output
-const _statfmt = '%-4s %-5s %-4s %-4s %-4s  %-4s %-4s';
-final statTitle = sprintf(_statfmt, ['Loss', 'Sent', 'Last', 'Best', 'Wrst', 'Avrg', 'Jttr']);
-final statMax = sprintf(_statfmt, List<String>.filled(7, '')).length;
 int maxHostaddr = 0, maxHostname = 0;
-const lindent = 4; // lpart's indent
-List<String?> fails = []; // message(s) if something went wrong (for example 'unknown host')
-
-// options can be reset with program args, below are defaults
-bool? ipv4only;            // -4
-bool? ipv6only;            // -6
-bool dnsEnable = true;     // -n
-int? count;                // -c count
-bool reportEnable = false; // -r
-bool jsonEnable = false;   // -j
-int interval = 1;          // -i seconds
-int firstTTL = 1;          // -t minTTL,maxTTL
-Syslogger? logger;         // --syslog
-//
-bool numeric = false;      // not toggled dnsEnable
-bool displayMode = true;   // if neither 'reportEnable' nor 'jsonEnable'
-const reportCycles = 10;   // for a report in json format and a plain one
-int lastTTL = maxTTL;      //
-
-//
 const maxNamesPerHop = 5;
 const unreachMesg = 'Destination is unreachable';
 
@@ -62,7 +31,7 @@ class Hop {
   String get avg => (data.rcvd > 0) ? prfmt(data.avg / 1000) : '';
   String get jttr => (data.rcvd > 1) ? prfmt(data.jttr / 1000) : '';
   String lpart(int n) => (n < addr.length) ? host(n) : '';
-  String get rpart => (data.sent > 0) ? sprintf(_statfmt, [loss, '${data.sent}', msec, best, wrst, avg, jttr]) : '';
+  String get rpart => (data.sent > 0) ? sprintf(statfmt, [loss, '${data.sent}', msec, best, wrst, avg, jttr]) : '';
   @override
   String toString() {
     int l = dnsEnable ? maxHostname : maxHostaddr;
@@ -70,10 +39,5 @@ class Hop {
   }
 }
 
-const floatUpto = 10;
-const twoDigitsUpto = 0.1;
-String prfmt(double v) => sprintf('%.*f', [((v > 0) && (v < floatUpto)) ? ((v < twoDigitsUpto) ? 2 : 1) : 0, v]);
-void setTitle(String host) { title = ['$myname-$version', optstr, host].where((a) => (a != null) && a.isNotEmpty).join(' '); }
 void cleanNonStat(Hop h) { h.ping = h.ts = h.prtt = null; h.seq = -1; h.unreach = false; }
-void addFailMesg(String? m) { if ((m != null) && !fails.contains(m)) fails.add(m); }
 

@@ -3,8 +3,10 @@ import 'dart:io' show sleep;
 import 'dart:async' show Timer;
 import 'package:collection/collection.dart' show IterableNullableExtension;
 import 'common.dart';
+import 'params.dart';
 import 'dcurses.dart';
 import 'sysping.dart' show Ping, Data, Status;
+import 'aux.dart' show addFail;
 
 late int _hops;
 int get hops => _hops;
@@ -136,9 +138,9 @@ Future<void> _readData(int ttl, Stream<Data> stream) async {
       case Status.unknown: // unknown host
         _hops = 0;
         _stopPingAt(ndx, 'got unknown at=$ndx');
-        addFailMesg(data.mesg);
+        addFail(data.mesg);
       case Status.error: // collect them
-        addFailMesg(data.mesg);
+        addFail(data.mesg);
       default: {}
     }
     // take into account the last timeout at ping exit
@@ -175,9 +177,11 @@ Future<void> _futuresInRange(String host, int min, int max) async {
 }
 
 bool _postclearNote = false;
+bool _keyProcessing = false;
 
 void _keyActions(String host) {
   if (_postclearNote) { addnote = null; _postclearNote = false; }
+  if (_keyProcessing) return;
   switch (getKey()) {
     case 'd': if (!numeric) dnsEnable = !dnsEnable;
       logger?.p("action 'dns': dnsEnable=$dnsEnable");
@@ -189,14 +193,24 @@ void _keyActions(String host) {
       logger?.p("action 'quit'");
       addnote = ': quitting...';
       for (int i = 0; i < maxTTL; i++) { _stopPingAt(i, 'quit'); }
-    case 'r': _resetStats(); addnote = ': resetting...'; _postclearNote = true;
+    case 'r':
+      logger?.p("action 'reset'");
+      addnote = ': resetting...'; _postclearNote = true;
+      _resetStats();
+/*
+    case 's': // not yet
+      logger?.s("action 'size'");
+      _keyProcessing = true; keySize(); _keyProcessing = false;
+      logger?.p('payload size: $psize');
+      _postclearNote = true;
+      _futuresInRange(host, firstTTL, lastTTL, reset: true);
+*/
     case 't':
-      logger?.p("action 'ttl'");
-      keyTTL();
-      logger?.p('new ttl range: $firstTTL..$lastTTL');
+      logger?.s("action 'ttl'");
+      _keyProcessing = true; keyTTL(); _keyProcessing = false;
+      logger?.p('ttl range: $firstTTL..$lastTTL');
       _postclearNote = true;
       _futuresInRange(host, firstTTL, lastTTL);
-      showStat(host, stat, _hops);
   }
 }
 
