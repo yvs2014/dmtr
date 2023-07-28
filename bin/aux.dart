@@ -15,13 +15,22 @@ set title(host) {
   _title = ['$myname-$version', optstr, host].where((a) => (a != null) && a.isNotEmpty).join(' ');
 }
 
+// extra messaging
+const _unreachMesg = 'Destination is unreachable';
+get unreachMesg => sprintf('%*s%s', [lindent, '', _unreachMesg]);
+const _wrongMesg = 'Got wrong data: ';
+String wrongMesg(String cause) => sprintf('%*s%s%s', [lindent, '', _wrongMesg, cause]);
+
+// pretty print
 const _floatUpto = 10;
 const _twoDigitsUpto = 0.1;
 String prfmt(double v) => sprintf('%.*f', [((v > 0) && (v < _floatUpto)) ? ((v < _twoDigitsUpto) ? 2 : 1) : 0, v]);
 
-List<String?> fails = []; // message(s) if something went wrong (for example 'unknown host')
+// messages if something went wrong (for example 'unknown host')
+List<String?> fails = [];
 void addFail(String? m) { if ((m != null) && !fails.contains(m)) fails.add(m); }
 
+// key hints in ncurses' mode
 typedef KeyHint = ({String key, String hint});
 final List<KeyHint> keyhints = [
   (key: 'help',  hint: 'this help'),
@@ -34,6 +43,7 @@ final List<KeyHint> keyhints = [
 ];
 final int maxHKey = keyhints.reduce((a, b) { return a.key.length > b.key.length ? a : b; }).key.length;
 
+// rest: aux functions
 (String?, String?) parseTTL(String s) {
   try {
     var mm = s.split(',');

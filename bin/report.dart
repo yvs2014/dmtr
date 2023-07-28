@@ -13,7 +13,9 @@ void printReport(List<Hop> stat, int hops) {
       String no = sprintf('%2d. ', [i + 1]);
       print(sprintf('%*s%s', [lindent, no, (stat[i].data.sent > 0) ? stat[i] : '']));
       for (int j = 1; j < stat[i].addr.length; j++) { print(sprintf('%*s%s', [lindent, '', stat[i].lpart(j)])); }
-      if (stat[i].unreach) print(sprintf('%*s%s', [lindent, '', unreachMesg]));
+      if (stat[i].unreach) print(unreachMesg.trim());
+      var mesg = stat[i].wrong;
+      if (mesg != null) print(wrongMesg(mesg));
     }
   }
 }

@@ -1,7 +1,7 @@
 
 import 'common.dart';
 import 'params.dart';
-import 'aux.dart' show fails;
+import 'aux.dart';
 
 Map<String, dynamic> getMappedHops(List<Hop> stat, int hops, String host) {
   List<Map<String, dynamic>> all = [];
@@ -13,6 +13,8 @@ Map<String, dynamic> getMappedHops(List<Hop> stat, int hops, String host) {
   if (fails.isNotEmpty) { map['fail'] = fails; fails = []; }
   return map;
 }
+
+const _extra = 'extra';
 
 Map<String, dynamic> _hop2map(Hop h, int ttl) {
   var tm = {
@@ -26,7 +28,12 @@ Map<String, dynamic> _hop2map(Hop h, int ttl) {
   };
   all.removeWhere((k, v) => (v is List) ? v.isEmpty : false);
   if (tm.isNotEmpty) all.addAll({'timeunit': 'millisecond', 'timing': tm});
-  if (h.unreach) all['extra'] = unreachMesg;
+  if (h.unreach) all[_extra] = unreachMesg;
+  var mesg = h.wrong;
+  if (mesg != null) {
+    var extraMesg = wrongMesg(mesg).trim();
+    all[_extra] = all.containsKey(_extra) ? '${all[_extra]}, $extraMesg' : extraMesg;
+  }
   return all;
 }
 

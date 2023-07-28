@@ -12,7 +12,6 @@ typedef HopData = ({int sent, int rcvd, int last, int best, int wrst, double avg
 
 int maxHostaddr = 0, maxHostname = 0;
 const maxNamesPerHop = 5;
-const unreachMesg = 'Destination is unreachable';
 
 class Hop {
   HopData data = (sent: 0, rcvd: 0, last: 0, best: 0, wrst: 0, avg: 0, jttr: 0);
@@ -23,15 +22,17 @@ class Hop {
   TsUsec? ts;   // timestamp of timeouted response
   int? prtt;    // previous RTT
   bool unreach = false; // unreachable
+  String? wrong;        // message with what's wrong
   String host(int n) => dnsEnable ? ((name[n] ?? addr[n]) ?? '') : (addr[n] ?? '');
-  String get msec => (data.rcvd > 0) ? prfmt(data.last / 1000) : '';
   String get loss => (data.sent > 0) ? '${prfmt((data.sent - data.rcvd) / data.sent * 100)}%' : '';
-  String get best => (data.rcvd > 0) ? prfmt(data.best / 1000) : '';
-  String get wrst => (data.rcvd > 0) ? prfmt(data.wrst / 1000) : '';
-  String get avg => (data.rcvd > 0) ? prfmt(data.avg / 1000) : '';
-  String get jttr => (data.rcvd > 1) ? prfmt(data.jttr / 1000) : '';
+  String get msec => (data.rcvd > 0) ? (_ok ? prfmt(data.last / 1000) : '') : '';
+  String get best => (data.rcvd > 0) ? (_ok ? prfmt(data.best / 1000) : '') : '';
+  String get wrst => (data.rcvd > 0) ? (_ok ? prfmt(data.wrst / 1000) : '') : '';
+  String get avg  => (data.rcvd > 0) ? (_ok ? prfmt(data.avg / 1000) : '') : '';
+  String get jttr => (data.rcvd > 1) ? (_ok ? prfmt(data.jttr / 1000) : '') : '';
   String lpart(int n) => (n < addr.length) ? host(n) : '';
   String get rpart => (data.sent > 0) ? sprintf(statfmt, [loss, '${data.sent}', msec, best, wrst, avg, jttr]) : '';
+  bool get _ok => (data.wrst != 0);
   @override
   String toString() {
     int l = dnsEnable ? maxHostname : maxHostaddr;

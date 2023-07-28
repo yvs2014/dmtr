@@ -5,7 +5,7 @@ import 'dart:convert' show Utf8Decoder, LineSplitter;
 import 'package:async/async.dart' show StreamGroup;
 import 'params.dart' show logger;
 
-enum Status { undefined, success, discard, timeout, unknown, error, finish }
+enum Status { undefined, success, discard, timeout, unknown, error, wrong, finish }
 const _utfenv = {'LC_ALL': 'C.UTF-8'};
 const _sysping = 'ping';
 
@@ -42,6 +42,8 @@ final Map<Status, _TrRegexp> _tre = { // regexps for transformer
     match: RegExp(r'^' + _sysping + r': (?<unkn>.*)$')),
   Status.error: (contain: RegExp(r'^' + _sysping + r': '),
     match: RegExp(r'^' + _sysping + r': (?<err>.*)$')),
+  Status.wrong: (contain: RegExp(r'bytes from .* \(.*\)'),
+    match: RegExp(r'from (((?<name>.*) \((?<addr>.*)\))|(?<ip>.*)): icmp_seq=(?<seq>\d+) ttl=(?<ttl>\d+) \((?<cause>.*)\)')),
 };
 
 
@@ -104,6 +106,7 @@ StreamTransformer<String, Data> get _transformer => StreamTransformer<String, Da
     if (_withStatus(data, sink, Status.timeout)) return;
     if (_withStatus(data, sink, Status.unknown)) return;
     if (_withStatus(data, sink, Status.error)) return;
+    if (_withStatus(data, sink, Status.wrong)) return;
     // sink.add(Data(status: Status.undefined, mesg: data)); // Other
   }
 );
@@ -120,6 +123,7 @@ bool _withStatus(data, sink, Status status) {
       case Status.timeout: _fnTimeout(data, sink, match);
       case Status.unknown: _fnUnknown(data, sink, match);
       case Status.error:   _fnError(data, sink, match);
+      case Status.wrong:   _fnWrong(data, sink, match);
       default: {}
     }
   }
@@ -168,4 +172,15 @@ void _fnUnknown(data, sink, match) =>
 
 void _fnError(data, sink, match) =>
   sink.add(Data(status: Status.error, mesg: match.groupNames.contains('err') ? match.namedGroup('err') : null));
+
+void _fnWrong(data, sink, match) {
+  var seq = match.groupNames.contains('seq') ? match.namedGroup('seq') : null;
+  var addr = match.groupNames.contains('addr') ? match.namedGroup('addr') : null;
+  var (s,a,n,t) = getSANT(seq, addr, match);
+  var ttl = match.namedGroup('ttl');
+  var cause = match.namedGroup('cause');
+  sink.add(Data(status: Status.wrong, seq: s, addr: a, name: n, ts: t,
+    ttl: (ttl != null) ? int.parse(ttl) : null, mesg: cause,
+  ));
+}
 

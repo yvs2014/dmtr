@@ -141,7 +141,9 @@ void showStat(String host, List<Hop> stat, int hops) {
         for (int j = 1; j < stat[i].addr.length; j++) {
           mvaddstr(y++, 0, sprintf('%*s%s', [lindent, '', stat[i].lpart(j)]));
         }
-        if (stat[i].unreach) mvaddstr(y++, 0, sprintf('%*s%s', [lindent, '', unreachMesg]));
+        if (stat[i].unreach) mvaddstr(y++, 0, unreachMesg);
+        var mesg = stat[i].wrong;
+        if (mesg != null) mvaddstr(y++, 0, wrongMesg(mesg));
       }
     }
     refresh();

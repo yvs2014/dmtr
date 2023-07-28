@@ -65,8 +65,14 @@ void _addAddrNameAt(int ndx, String addr, String? name) {
   }
 }
 
-void _setHopData(int ndx, Data data) {
+void _saveAddrName(int ndx, Data data) {
   if (!gotdata) gotdata = true;
+  if (data.addr != null) _addAddrNameAt(ndx, data.addr!, data.name);
+  if (data.seq != null) stat[ndx].seq = data.seq!; // marker of stats
+}
+
+void _setHopData(int ndx, Data data) {
+  _saveAddrName(ndx, data);
   if (stat[ndx].unreach) stat[ndx].unreach = false;
   int? last;
   if (data.time != null) {
@@ -79,8 +85,6 @@ void _setHopData(int ndx, Data data) {
       last = ((curr.sec - prev.sec) * 1000000 + (curr.usec - prev.usec)).toInt();
     }
   }
-  if (data.addr != null) _addAddrNameAt(ndx, data.addr!, data.name);
-  if (data.seq != null) stat[ndx].seq = data.seq!; // marker of stats
   int sent = stat[ndx].data.sent + 1;
   int rcvd = stat[ndx].data.rcvd + 1;
   int best = stat[ndx].data.best;
@@ -104,11 +108,16 @@ void _setHopData(int ndx, Data data) {
 HopData _incHopDataSent(int ndx) => (sent: stat[ndx].data.sent + 1, rcvd: stat[ndx].data.rcvd,
   last: stat[ndx].data.last, best: stat[ndx].data.best, wrst: stat[ndx].data.wrst,
   avg: stat[ndx].data.avg, jttr: stat[ndx].data.jttr);
+HopData _incHopDataSentRcv(int ndx) => (sent: stat[ndx].data.sent + 1, rcvd: stat[ndx].data.rcvd + 1,
+  last: stat[ndx].data.last, best: stat[ndx].data.best, wrst: stat[ndx].data.wrst,
+  avg: stat[ndx].data.avg, jttr: stat[ndx].data.jttr);
 
-int _ndxBackOfUnreach(int ndx) {
-  for (int i = ndx; i > 0; i--) {
-    if (!stat[i - 1].unreach) return i;
-  }
+int _ndxFirstUnreach(int ndx) {
+  for (int i = ndx; i > 0; i--) { if (!stat[i - 1].unreach) return i; }
+  return 0;
+}
+int _ndxFirstWrong(int ndx, String cause) {
+  for (int i = ndx; i > 0; i--) { if (stat[i - 1].wrong != cause) return i; }
   return 0;
 }
 
@@ -124,10 +133,10 @@ Future<void> _readData(int ttl, Stream<Data> stream) async {
       _setHopData(ndx, data);
     case Status.discard:
       _setHopData(ndx, data);
-      if (data.mesg?.contains('nreachable') ?? false) {
+      if (data.mesg?.contains('nreachable') ?? false) { // rewind back to last 'unreach'
         stat[ndx].unreach = true;
         int lastndx = (lastTTL < _hops) ? lastTTL : _hops;
-        if ((lastndx == ttl) && (lastndx > 0)) _hops = _ndxBackOfUnreach(ndx) + 1;
+        if ((lastndx == ttl) && (lastndx > 0)) _hops = _ndxFirstUnreach(ndx) + 1;
       }
     case Status.timeout:
       if (stat[ndx].seq != data.seq) stat[ndx].data = _incHopDataSent(ndx);
@@ -139,6 +148,15 @@ Future<void> _readData(int ttl, Stream<Data> stream) async {
       addFail(data.mesg);
     case Status.error: // collect errors
       addFail(data.mesg);
+    case Status.wrong: // an answer, but neither success nor discard
+      _saveAddrName(ndx, data);
+      if (data.seq != null) stat[ndx].data = _incHopDataSentRcv(ndx);
+      var wrong = data.mesg;
+      stat[ndx].wrong = wrong;
+      if (wrong != null) { // rewind back to the same 'wrong'
+        int lastndx = (lastTTL < _hops) ? lastTTL : _hops;
+        if ((lastndx == ttl) && (lastndx > 0)) _hops = _ndxFirstWrong(ndx, wrong) + 1;
+      }
     case Status.finish: // take into account the last timeout at ping exit
       if (stat[ndx].seq == 0) stat[ndx].data = _incHopDataSent(ndx);
     default: {}
