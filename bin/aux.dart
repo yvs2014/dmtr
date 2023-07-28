@@ -27,7 +27,7 @@ final List<KeyHint> keyhints = [
   (key: 'help',  hint: 'this help'),
   (key: 'dns',   hint: 'toggle hostname/ipaddr show (note: on linux it works only in non-numeric mode)'),
   (key: 'ttl',   hint: 'set ttl range in min,max format'),
-//  (key: 'size',  hint: 'payload size'), /* not yet */
+  (key: 'size',  hint: 'payload size'),
   (key: 'reset', hint: 'reset stats'), 
   (key: 'pause', hint: 'pause/resume'), 
   (key: 'quit',  hint: 'stop and exit'),

@@ -21,7 +21,7 @@ class Syslogger {
   String? tag;
   final List<String> _args = [];
   p(String message) => Process.run(_syslogger, _args + [message], environment: _utfenv);
-  s(String message) => Process.runSync(_syslogger, _args + [message], environment: _utfenv);
 //  p(String message) => print(message);
+  s(String message) => Process.runSync(_syslogger, _args + [message], environment: _utfenv);
 }
 

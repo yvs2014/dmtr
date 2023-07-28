@@ -5,7 +5,7 @@ import 'dart:convert' show Utf8Decoder, LineSplitter;
 import 'package:async/async.dart' show StreamGroup;
 import 'params.dart' show logger;
 
-enum Status { undefined, success, discard, timeout, unknown, error }
+enum Status { undefined, success, discard, timeout, unknown, error, finish }
 const _utfenv = {'LC_ALL': 'C.UTF-8'};
 const _sysping = 'ping';
 
@@ -83,7 +83,7 @@ class Ping {
   Future<void> _done() async {
     var rc = await _process.exitCode;
     if (!_cntr.isClosed) {
-      _cntr.add(Data(rc: rc));
+      _cntr.add(Data(status: Status.finish, rc: rc));
       await _cntr.close();
     }
     logger?.p('ping[$ttl] finished (rc=$rc)');

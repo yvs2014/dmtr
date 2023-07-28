@@ -1,3 +1,6 @@
+## 0.1.31
+- add payload size changing at runtime
+
 ## 0.1.30
 - add -s option (payload size)
 
