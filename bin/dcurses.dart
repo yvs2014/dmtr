@@ -37,11 +37,11 @@ void keyHelp() {
   int ind = 2, y = 2, x0 = 1, x = x0 + ind + maxHKey + 2;
   mvaddstr(y++, x0, 'Keys:');
   for (var h in keyhints) {
-    if (h.key.isNotEmpty) {
-      attron(aBold); mvaddstr(y, x0 + ind, h.key[0]); attroff(aBold);
-      if (h.key.length > 1) addstr(h.key.substring(1));
-      mvaddstr(y++, x, h.hint);
-    }
+    move(y, x0 + ind);
+    if (h.b > 0) addstr(h.key.substring(0, h.b));
+    attron(aBold); addstr(h.key[h.b]); attroff(aBold);
+    if (h.key.length > h.b) addstr(h.key.substring(h.b + 1));
+    mvaddstr(y++, x, h.hint);
   }
   y++;
   mvaddstr(y++, x0, 'Press any key to continue ...');
@@ -84,6 +84,7 @@ void _getInput(String what, _InputFn fn) {
   pause = false;
 }
 
+void keyQoS() => _getInput('QoS/ToS bits', parseQoS);
 void keyTTL() => _getInput('TTL range', parseTTL);
 void keySize() => _getInput('payload size', parsePsize);
 
@@ -92,11 +93,15 @@ int printTitle(int y0, int w, {bool over = false, bool up = false}) {
   attron(aBold);
   { // firstly print program name and its arguments
     List<String?> parts = [title];
-    if (numeric != !dnsEnable) parts.add('(DNS-${dnsEnable ? "on" : "off"})');
+    List<String?> subs = [];
+    if (numeric != !dnsEnable) subs.add('DNS ${dnsEnable ? "on" : "off"}');
+    if (qos != qosopt) subs.add('QoS $qos');
+    if (psize != pszopt) subs.add('psize $psize');
+    if (subs.isNotEmpty) { var s = subs.where((p) => (p != null) && p.isNotEmpty).join(', '); parts.add('($s)'); }
     if (addnote != null) parts.add(addnote);
     if (!gotdata) parts.add(': no data yet');
     if (over) { move(y, 0); clrtoeol(); }
-    { String s = parts.where((p) => (p != null) && p.isNotEmpty).join(' ');
+    { var s = parts.where((p) => (p != null) && p.isNotEmpty).join(' ');
       mvaddstr(y++, 0, sprintf('%*s', [(cols + s.length) ~/ 2, s])); }
   }
   if (over || up) { move(y, 0); clrtoeol(); }
@@ -106,10 +111,10 @@ int printTitle(int y0, int w, {bool over = false, bool up = false}) {
     { // print 'Keys Datetime' line
       mvaddstr(y, 1, 'Keys:');
       for (var h in keyhints) {
-        if (h.key.isNotEmpty) {
-          attron(aBold); addstr(' ${h.key[0]}'); attroff(aBold);
-          if (h.key.length > 1) addstr(h.key.substring(1));
-        }
+        addstr(' ');
+        if (h.b > 0) addstr(h.key.substring(0, h.b));
+        attron(aBold); addstr(h.key[h.b]); attroff(aBold);
+        if (h.key.length > h.b) addstr(h.key.substring(h.b + 1));
       }
       String now = '${DateTime.now()}';
       now = now.substring(0, now.indexOf('.'));

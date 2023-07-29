@@ -1,3 +1,6 @@
+## 0.1.33
+- add -Q option (QoS/ToS bits)
+
 ## 0.1.32
 - add extra messaging if there's wrong data in replies
 

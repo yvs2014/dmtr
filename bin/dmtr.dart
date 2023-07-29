@@ -15,7 +15,7 @@ import 'syslogger.dart' show probeSyslogger, Syslogger;
 
 void usage(String name, help, int indent) {
   final br = sprintf('\n%*s', [indent, '']);
-  print("Usage: $name [-nrj46h] [-c cycles] [-i interval] [-s size] [-t [minTTL][,maxTTL]] [--syslog] TARGET ...$br${help.replaceAll('\n', br)}");
+  print("Usage: $name [-nrj46h] [-c cycles] [-i interval] [-s size] [-t [minTTL][,maxTTL]] [-Q QoS] [--syslog] TARGET ...$br${help.replaceAll('\n', br)}");
   exit(-1);
 }
 
@@ -30,6 +30,7 @@ main(List<String> args) async {
   parser.addOption('interval', abbr: 'i', help: 'Interval in seconds between pings (default $interval)', valueHelp: 'seconds');
   parser.addOption('size',     abbr: 's', help: 'Payload size (default ${psize_.def})', valueHelp: 'bytes');
   parser.addOption('ttl',      abbr: 't', help: 'TTL range to ping, it can be also min or max only (default $firstTTL,$lastTTL)', valueHelp: 'min,max');
+  parser.addOption('qos',      abbr: 'Q', help: 'QoS/ToS byte to set (default is not set)', valueHelp: 'bits');
   parser.addFlag('numeric', abbr: 'n', help: 'Numeric output (i.e. disable DNS resolve)', negatable: false);
   parser.addFlag('report',  abbr: 'r', help: 'Print simple report at exit', negatable: false);
   parser.addFlag('json',    abbr: 'j', help: 'Print report in JSON format', negatable: false);
@@ -55,11 +56,17 @@ main(List<String> args) async {
     }
     if (parsed['size'] != null) {
       var (e, _) = parsePsize(parsed['size']);
-      if (e != null) throw e;
+      if (e != null) { throw e; }
+      else { pszopt = psize; }
     }
     if (parsed['ttl'] != null) {
       var (e, _) = parseTTL(parsed['ttl']);
       if (e != null) throw e;
+    }
+    if (parsed['qos'] != null) {
+      var (e, _) = parseQoS(parsed['qos']);
+      if (e != null) { throw e; }
+      else { qosopt = qos; }
     }
     if (parsed['interval'] != null) {
       interval = int.parse(parsed['interval']);

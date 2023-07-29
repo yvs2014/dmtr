@@ -48,11 +48,12 @@ final Map<Status, _TrRegexp> _tre = { // regexps for transformer
 
 
 class Ping {
-  Ping(this.host, { int? count, interval = 1, int? size, this.ttl = 30, bool? numeric, bool? ipv4, bool? ipv6}) {
+  Ping(this.host, { int? count, interval = 1, int? size, this.ttl = 30, int? qos, bool? numeric, bool? ipv4, bool? ipv6}) {
     if (!Platform.isLinux) throw Exception("Platform '${Platform.operatingSystem}' is not supported");
     _args.addAll(['-i$interval', '-W$interval', '-t$ttl']);
     if (count != null) _args.add('-c$count');
     if (size != null) _args.add('-s$size');
+    if (qos != null) _args.add('-Q$qos');
     if (numeric ?? false) _args.add('-n');
     if (ipv4 ?? false) _args.add('-4');
     if (ipv6 ?? false) _args.add('-6');

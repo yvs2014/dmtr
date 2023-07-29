@@ -3,7 +3,7 @@ import 'dart:io' show Platform;
 import 'syslogger.dart' show Syslogger;
 
 final myname = (Platform.executable == 'dart') ? 'dmtr' : Platform.executable;
-final version = '0.1.32';
+final version = '0.1.33';
 String? optstr;
 String? addnote;
 bool pause = false;
@@ -19,13 +19,16 @@ bool jsonEnable = false;   // -j
 int interval = 1;          // -i seconds
 int firstTTL = 1;          // -t minTTL,maxTTL
 int? psize;                // -s payload size
+int? qos;                  // -Q QoS/ToS bits
 Syslogger? logger;         // --syslog
 
 // default params
 const maxTTL = 30; // suppose it's enough for today's internet
-// payload in bytes: default=56, min=sizeof(struct timeval), max=(uint16_t - iph_sz - icmph_sz)
-final psize_ = (def: 56, min: 16, max: 65535 - 20 - 8);
+// payload in bytes: default=56, min=sizeof(struct timeval), max=(typical_highest_mtu - iph_sz - icmph_sz)
+final psize_ = (def: 56, min: 16, max: 9000 - 20 - 8);
 bool numeric = false;      // not toggled dnsEnable
+int? pszopt;               // not toggled '-s' arg
+int? qosopt;               // not toggled '-q' arg
 bool displayMode = true;   // if neither 'reportEnable' nor 'jsonEnable'
 const reportCycles = 10;   // for a report in json format and a plain one
 int lastTTL = maxTTL;      //

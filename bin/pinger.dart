@@ -176,7 +176,7 @@ Future<void> _futuresInRange(String host, int min, int max, {bool reset = false}
       int? cnt = count;
       if ((stat[i].data.sent > 0) && (cnt != null)) cnt -= stat[i].data.sent;
       Ping? p;
-      if ((cnt == null) || (cnt > 0)) p = Ping(host, count: cnt, interval: interval, size: psize, ttl: ttl, numeric: !dnsEnable, ipv4: ipv4only, ipv6: ipv6only);
+      if ((cnt == null) || (cnt > 0)) p = Ping(host, count: cnt, interval: interval, size: psize, ttl: ttl, qos: qos, numeric: !dnsEnable, ipv4: ipv4only, ipv6: ipv6only);
       if (p != null) {
         stat[i].ping = p;
         _futures[i] = _readData(ttl, p.data);
@@ -221,6 +221,7 @@ void _keyActions(String host) {
       logger?.p("action 'reset'");
       addnote = ': resetting...'; _postclearNote = true;
       _resetStats();
+    case 'o': _resetPings(host, 'qos', keyQoS, () => 'qos bits: $qos', true);
     case 's': _resetPings(host, 'size', keySize, () => 'payload size: $psize', true);
     case 't': _resetPings(host, 'ttl', keyTTL, () => 'ttl range: $firstTTL..$lastTTL', false);
   }

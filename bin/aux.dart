@@ -31,15 +31,16 @@ List<String?> fails = [];
 void addFail(String? m) { if ((m != null) && !fails.contains(m)) fails.add(m); }
 
 // key hints in ncurses' mode
-typedef KeyHint = ({String key, String hint});
+typedef KeyHint = ({String key, int b, String hint}); // 'b' is index of bold character
 final List<KeyHint> keyhints = [
-  (key: 'help',  hint: 'this help'),
-  (key: 'dns',   hint: 'toggle hostname/ipaddr show (note: on linux it works only in non-numeric mode)'),
-  (key: 'ttl',   hint: 'set ttl range in min,max format'),
-  (key: 'size',  hint: 'payload size'),
-  (key: 'reset', hint: 'reset stats'), 
-  (key: 'pause', hint: 'pause/resume'), 
-  (key: 'quit',  hint: 'stop and exit'),
+  (key: 'help',  b: 0, hint: 'this help'),
+  (key: 'dns',   b: 0, hint: 'toggle hostname/ipaddr show (note: on linux it works only in non-numeric mode)'),
+  (key: 'ttl',   b: 0, hint: 'set TTL range in min,max format'),
+  (key: 'qos',   b: 1, hint: 'set QoS bits'),
+  (key: 'size',  b: 0, hint: 'payload size'),
+  (key: 'reset', b: 0, hint: 'reset stats'),
+  (key: 'pause', b: 0, hint: 'pause/resume'),
+  (key: 'quit',  b: 0, hint: 'stop and exit'),
 ];
 final int maxHKey = keyhints.reduce((a, b) { return a.key.length > b.key.length ? a : b; }).key.length;
 
@@ -59,7 +60,7 @@ final int maxHKey = keyhints.reduce((a, b) { return a.key.length > b.key.length 
         lastTTL = ttl;
       }
     }
-  } catch (e) { return ('$e', null); }
+  } catch (e) { return ('TTL: $e', null); }
   return (null, '$firstTTL..$lastTTL');
 }
 
@@ -68,7 +69,16 @@ final int maxHKey = keyhints.reduce((a, b) { return a.key.length > b.key.length 
     int sz = int.parse(s);
     if ((sz < psize_.min) || (sz > psize_.max)) return ('Payload size($sz) must be in range ${psize_.min}..${psize_.max}', null);
     psize = sz;
-  } catch (e) { return ('$e', null); }
+  } catch (e) { return ('Payload size: $e', null); }
   return (null, '$psize');
+}
+
+(String?, String?) parseQoS(String s) {
+  try {
+    int q = int.parse(s);
+    if ((q < 0) || (q > 255)) return ('QoS/ToS bits ($q) must be in range 0..255', null);
+    qos = q;
+  } catch (e) { return ('QoS/ToS: $e', null); }
+  return (null, '$qos');
 }
 
