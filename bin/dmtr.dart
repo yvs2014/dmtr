@@ -15,7 +15,7 @@ import 'syslogger.dart' show probeSyslogger, Syslogger;
 
 void usage(String name, help, int indent) {
   final br = sprintf('\n%*s', [indent, '']);
-  print("Usage: $name [-nrj46h] [-c cycles] [-i interval] [-s size] [-t [minTTL][,maxTTL]] [-Q QoS] [--syslog] TARGET ...$br${help.replaceAll('\n', br)}");
+  print("Usage: $name [-nrj46h] [-c cycles] [-i interval] [-s size] [-t [minTTL][,maxTTL]] [-Q QoS] [-p hex] [--syslog] TARGET ...$br${help.replaceAll('\n', br)}");
   exit(-1);
 }
 
@@ -29,6 +29,7 @@ main(List<String> args) async {
   parser.addOption('cycles',   abbr: 'c', help: 'Run <number> cycles per target (default nolimit)', valueHelp: 'number');
   parser.addOption('interval', abbr: 'i', help: 'Interval in seconds between pings (default $interval)', valueHelp: 'seconds');
   parser.addOption('size',     abbr: 's', help: 'Payload size (default ${psize_.def})', valueHelp: 'bytes');
+  parser.addOption('payload',  abbr: 'p', help: 'Payload pattern in hex notation, max 16bytes/32hexchars (default is not set)', valueHelp: 'hexchars');
   parser.addOption('ttl',      abbr: 't', help: 'TTL range to ping, it can be also min or max only (default $firstTTL,$lastTTL)', valueHelp: 'min,max');
   parser.addOption('qos',      abbr: 'Q', help: 'QoS/ToS byte to set (default is not set)', valueHelp: 'bits');
   parser.addFlag('numeric', abbr: 'n', help: 'Numeric output (i.e. disable DNS resolve)', negatable: false);
@@ -53,6 +54,11 @@ main(List<String> args) async {
     if (parsed['json'] != null) {
       jsonEnable = parsed['json'];
       if (jsonEnable) count ??= reportCycles;
+    }
+    if (parsed['payload'] != null) {
+      var (e, _) = parsePayload(parsed['payload']);
+      if (e != null) { throw e; }
+      else { pldopt = payload; }
     }
     if (parsed['size'] != null) {
       var (e, _) = parsePsize(parsed['size']);

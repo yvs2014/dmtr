@@ -1,3 +1,6 @@
+## 0.1.37
+- add -p option (payload pattern)
+
 ## 0.1.36
 - add 'count/cycles' runtime customization
 

@@ -176,7 +176,7 @@ Future<void> _futuresInRange(String host, int min, int max, {bool reset = false}
       int? cnt = count;
       if ((stat[i].data.sent > 0) && (cnt != null)) cnt -= stat[i].data.sent;
       Ping? p;
-      if ((cnt == null) || (cnt > 0)) p = Ping(host, count: cnt, interval: interval, size: psize, ttl: ttl, qos: qos, numeric: !dnsEnable, ipv4: ipv4only, ipv6: ipv6only);
+      if ((cnt == null) || (cnt > 0)) p = Ping(host, numeric: !dnsEnable, count: cnt, interval: interval, size: psize, ttl: ttl, qos: qos, payload: payload, ipv4: ipv4only, ipv6: ipv6only);
       if (p != null) {
         stat[i].ping = p;
         _futures[i] = _readData(ttl, p.data);
@@ -210,24 +210,25 @@ void _keyActions(String host) {
   if (_postclearNote) { addnote = null; _postclearNote = false; }
   if (_keyProcessing) return;
   switch (getKey()) {
-    case 'd': if (!numeric) dnsEnable = !dnsEnable;
-      logger?.p("action 'dns': dnsEnable=$dnsEnable");
     case 'h': keyHelp(); showStat(host, stat, _hops);
       logger?.p("action 'help'");
+    case 'd': if (!numeric) dnsEnable = !dnsEnable;
+      logger?.p("action 'dns': dnsEnable=$dnsEnable");
+    case 'c': _resetPings(host, 'count', keyCycles, () => 'cycles: $count', true);
+    case 't': _resetPings(host, 'ttl', keyTTL, () => 'ttl range: $firstTTL..$lastTTL', false);
+    case 'o': _resetPings(host, 'qos', keyQoS, () => 'qos bits: $qos', true);
+    case 's': _resetPings(host, 'size', keySize, () => 'payload size: $psize', true);
+    case 'l': _resetPings(host, 'payload', keyPayload, () => 'payload pattern: $payload', true);
+    case 'r':
+      logger?.p("action 'reset'");
+      addnote = ': resetting...'; _postclearNote = true;
+      _resetStats();
     case 'p': pause = !pause; addnote = pause ? ': output in pause' : null;
       logger?.p("action 'pause': pause=$pause");
     case 'q':
       logger?.p("action 'quit'");
       addnote = ': quitting...';
       for (int i = 0; i < maxTTL; i++) { _stopPingAt(i, 'quit'); }
-    case 'r':
-      logger?.p("action 'reset'");
-      addnote = ': resetting...'; _postclearNote = true;
-      _resetStats();
-    case 'o': _resetPings(host, 'qos', keyQoS, () => 'qos bits: $qos', true);
-    case 's': _resetPings(host, 'size', keySize, () => 'payload size: $psize', true);
-    case 't': _resetPings(host, 'ttl', keyTTL, () => 'ttl range: $firstTTL..$lastTTL', false);
-    case 'c': _resetPings(host, 'count', keyCycles, () => 'cycles: $count', true);
   }
 }
 

@@ -93,6 +93,7 @@ void keyQoS() => _getInput('QoS/ToS bits', parseQoS);
 void keyTTL() => _getInput('TTL range', parseTTL);
 void keySize() => _getInput('payload size', parsePsize);
 void keyCycles() => _getInput('cycles', parseCycles);
+void keyPayload() => _getInput('payload pattern', parsePayload);
 
 int printTitle(int y0, int w, {bool over = false, bool up = false}) {
   int y = y0;
@@ -105,6 +106,7 @@ int printTitle(int y0, int w, {bool over = false, bool up = false}) {
     if ((firstTTL != ftlopt) || (lastTTL != ltlopt)) subs.add('TTL $firstTTL..$lastTTL');
     if (qos != qosopt) subs.add('QoS $qos');
     if (psize != pszopt) subs.add('psize $psize');
+    if (payload != pldopt) subs.add('payload $payload');
     if (subs.isNotEmpty) { var s = subs.where((p) => (p != null) && p.isNotEmpty).join(', '); parts.add('($s)'); }
     if (addnote != null) parts.add(addnote);
     if (!gotdata) parts.add(': no data yet');

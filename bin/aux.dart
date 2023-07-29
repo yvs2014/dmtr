@@ -33,15 +33,16 @@ void addFail(String? m) { if ((m != null) && !fails.contains(m)) fails.add(m); }
 // key hints in ncurses' mode
 typedef KeyHint = ({String key, int b, String hint}); // 'b' is index of bold character
 final List<KeyHint> keyhints = [
-  (key: 'help',  b: 0, hint: 'this help'),
-  (key: 'dns',   b: 0, hint: 'toggle hostname/ipaddr show (note: on linux it works only in non-numeric mode)'),
-  (key: 'count', b: 0, hint: 'number of cycles to ping'),
-  (key: 'ttl',   b: 0, hint: 'set TTL range in min,max format'),
-  (key: 'qos',   b: 1, hint: 'set QoS bits'),
-  (key: 'size',  b: 0, hint: 'payload size'),
-  (key: 'reset', b: 0, hint: 'reset stats'),
-  (key: 'pause', b: 0, hint: 'pause/resume'),
-  (key: 'quit',  b: 0, hint: 'stop and exit'),
+  (key: 'help',    b: 0, hint: 'this help'),
+  (key: 'dns',     b: 0, hint: 'toggle hostname/ipaddr show (note: on linux it works only in non-numeric mode)'),
+  (key: 'count',   b: 0, hint: 'number of cycles to ping'),
+  (key: 'ttl',     b: 0, hint: 'set TTL range in min,max format'),
+  (key: 'qos',     b: 1, hint: 'set QoS bits'),
+  (key: 'size',    b: 0, hint: 'payload size'),
+  (key: 'payload', b: 3, hint: 'payload pattern'),
+  (key: 'reset',   b: 0, hint: 'reset stats'),
+  (key: 'pause',   b: 0, hint: 'pause/resume'),
+  (key: 'quit',    b: 0, hint: 'stop and exit'),
 ];
 final int maxHKey = keyhints.reduce((a, b) { return a.key.length > b.key.length ? a : b; }).key.length;
 
@@ -73,6 +74,15 @@ final int maxHKey = keyhints.reduce((a, b) { return a.key.length > b.key.length 
     if (sz != psize) { psize = sz; paramsChanged = true; }
   } catch (e) { return ('Payload size: $e', null); }
   return (null, '$psize');
+}
+
+final RegExp _hex = RegExp(r'^([\da-fA-F]{1,32})$');
+(String?, String?) parsePayload(String s) {
+  try {
+    if (!_hex.hasMatch(s)) return ('Payload pattern($s) must be in hex format upto 16bytes, regexp: [0-9a-fA-F]{1,32}', null);
+    if (s != payload) { payload = s; paramsChanged = true; }
+  } catch (e) { return ('Payload pattern: $e', null); }
+  return (null, '$payload');
 }
 
 (String?, String?) parseQoS(String s) {
