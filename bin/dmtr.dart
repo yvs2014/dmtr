@@ -61,7 +61,8 @@ main(List<String> args) async {
     }
     if (parsed['ttl'] != null) {
       var (e, _) = parseTTL(parsed['ttl']);
-      if (e != null) throw e;
+      if (e != null) { throw e; }
+      else { ftlopt = firstTTL; ltlopt = lastTTL; }
     }
     if (parsed['qos'] != null) {
       var (e, _) = parseQoS(parsed['qos']);

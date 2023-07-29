@@ -90,11 +90,12 @@ void keySize() => _getInput('payload size', parsePsize);
 
 int printTitle(int y0, int w, {bool over = false, bool up = false}) {
   int y = y0;
-  attron(aBold);
+//  attron(aBold);
   { // firstly print program name and its arguments
     List<String?> parts = [title];
     List<String?> subs = [];
     if (numeric != !dnsEnable) subs.add('DNS ${dnsEnable ? "on" : "off"}');
+    if ((firstTTL != ftlopt) || (lastTTL != ltlopt)) subs.add('TTL $firstTTL..$lastTTL');
     if (qos != qosopt) subs.add('QoS $qos');
     if (psize != pszopt) subs.add('psize $psize');
     if (subs.isNotEmpty) { var s = subs.where((p) => (p != null) && p.isNotEmpty).join(', '); parts.add('($s)'); }
@@ -105,7 +106,7 @@ int printTitle(int y0, int w, {bool over = false, bool up = false}) {
       mvaddstr(y++, 0, sprintf('%*s', [(cols + s.length) ~/ 2, s])); }
   }
   if (over || up) { move(y, 0); clrtoeol(); }
-  attroff(aBold);
+//  attroff(aBold);
   if (up) { refresh(); }
   else {
     { // print 'Keys Datetime' line

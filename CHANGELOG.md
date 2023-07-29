@@ -1,3 +1,6 @@
+## 0.1.34
+- indicate runtime TTL customization
+
 ## 0.1.33
 - add -Q option (QoS/ToS bits)
 
