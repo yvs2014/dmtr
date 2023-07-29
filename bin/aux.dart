@@ -49,16 +49,17 @@ final int maxHKey = keyhints.reduce((a, b) { return a.key.length > b.key.length 
   try {
     var mm = s.split(',');
     if (mm.isNotEmpty) {
+      int ttl0 = firstTTL, ttl1 = lastTTL;
       if (mm[0].isNotEmpty) {
-        int ttl = int.parse(mm[0]);
-        if ((ttl < 1) || (ttl > maxTTL)) return ('Min TTL ($ttl) is out of range 1..$maxTTL', null);
-        firstTTL = ttl;
+        ttl0 = int.parse(mm[0]);
+        if ((ttl0 < 1) || (ttl0 > maxTTL)) return ('Min TTL ($ttl0) is out of range 1..$maxTTL', null);
       }
       if ((mm.length > 1) && mm[1].isNotEmpty) {
-        int ttl = int.parse(mm[1]);
-        if ((ttl < firstTTL) || (ttl > maxTTL)) return ('Max TTL ($ttl) is out of range $firstTTL..$maxTTL', null);
-        lastTTL = ttl;
+        ttl1 = int.parse(mm[1]);
+        if ((ttl1 < ttl0) || (ttl1 > maxTTL)) return ('Max TTL ($ttl1) is out of range $ttl0..$maxTTL', null);
       }
+      if (ttl0 != firstTTL) { firstTTL = ttl0; paramsChanged = true; }
+      if (ttl1 != lastTTL) { lastTTL = ttl1; paramsChanged = true; }
     }
   } catch (e) { return ('TTL: $e', null); }
   return (null, '$firstTTL..$lastTTL');
@@ -68,7 +69,7 @@ final int maxHKey = keyhints.reduce((a, b) { return a.key.length > b.key.length 
   try {
     int sz = int.parse(s);
     if ((sz < psize_.min) || (sz > psize_.max)) return ('Payload size($sz) must be in range ${psize_.min}..${psize_.max}', null);
-    psize = sz;
+    if (psize != sz) { psize = sz; paramsChanged = true; }
   } catch (e) { return ('Payload size: $e', null); }
   return (null, '$psize');
 }
@@ -77,7 +78,7 @@ final int maxHKey = keyhints.reduce((a, b) { return a.key.length > b.key.length 
   try {
     int q = int.parse(s);
     if ((q < 0) || (q > 255)) return ('QoS/ToS bits ($q) must be in range 0..255', null);
-    qos = q;
+    if (qos != q) { qos = q; paramsChanged = true; }
   } catch (e) { return ('QoS/ToS: $e', null); }
   return (null, '$qos');
 }

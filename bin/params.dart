@@ -3,7 +3,7 @@ import 'dart:io' show Platform;
 import 'syslogger.dart' show Syslogger;
 
 final myname = (Platform.executable == 'dart') ? 'dmtr' : Platform.executable;
-final version = '0.1.34';
+final version = '0.1.35';
 String? optstr;
 String? addnote;
 bool pause = false;
@@ -34,6 +34,7 @@ int? pszopt;               // not toggled '-s' arg
 int? qosopt;               // not toggled '-q' arg
 bool displayMode = true;   // if neither 'reportEnable' nor 'jsonEnable'
 const reportCycles = 10;   // for a report in json format and a plain one
+bool paramsChanged = false; // indicator of customization
 
 // misc
 //List<String?> fails = []; // message(s) if something went wrong (for example 'unknown host')

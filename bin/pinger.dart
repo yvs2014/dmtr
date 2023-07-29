@@ -198,9 +198,12 @@ bool _keyProcessing = false;
 void _resetPings(String host, String what, void Function() parser, String Function() inform, bool reset) {
   logger?.s("action '$what'");
   _keyProcessing = true; parser(); _keyProcessing = false;
-  logger?.p(inform());
-  _postclearNote = true;
-  _futuresInRange(host, firstTTL, lastTTL, reset: reset);
+  if (paramsChanged) {
+    paramsChanged = false;
+    _postclearNote = true;
+    logger?.p(inform());
+    _futuresInRange(host, firstTTL, lastTTL, reset: reset);
+  } else { logger?.p('no changes in params'); }
 }
 
 void _keyActions(String host) {

@@ -78,7 +78,7 @@ void _getInput(String what, _InputFn fn) {
   noecho();
   if (input.isNotEmpty) {
     var (e, a) = fn(utf8.decode(input).trim());
-    if (a != null) addnote = '$what: $a';
+    if ((a != null) && paramsChanged) addnote = '$what: $a';
     if (e != null) { mvaddstr(y + 2, x, 'ERROR: $e'); refresh(); sleep(Duration(seconds: 3)); }
   }
   pause = false;

@@ -1,3 +1,6 @@
+## 0.1.35
+- do not restart pings unless params have been changed (runtime customization)
+
 ## 0.1.34
 - indicate runtime TTL customization
 
