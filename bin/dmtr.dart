@@ -119,7 +119,7 @@ main(List<String> args) async {
   if (jsonEnable) { // Print report in JSON format
     logger?.p('print stats in json format');
     var encoder = JsonEncoder.withIndent('  ');
-    print(encoder.convert(json));
+    print(encoder.convert({'options': optstr, 'data': json}));
   }
 }
 

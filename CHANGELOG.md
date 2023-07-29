@@ -1,3 +1,6 @@
+## 0.1.38
+- add option string to json output
+
 ## 0.1.37
 - add -p option (payload pattern)
 
