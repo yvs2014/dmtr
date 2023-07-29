@@ -79,7 +79,12 @@ void _getInput(String what, _InputFn fn) {
   if (input.isNotEmpty) {
     var (e, a) = fn(utf8.decode(input).trim());
     if ((a != null) && paramsChanged) addnote = '$what: $a';
-    if (e != null) { mvaddstr(y + 2, x, 'ERROR: $e'); refresh(); sleep(Duration(seconds: 3)); }
+    if (e != null) {
+      mvaddstr(y + 2, x, 'ERROR: $e');
+      refresh();
+      logger?.p('input error: $e');
+      sleep(Duration(seconds: 3));
+    }
   }
   pause = false;
 }
@@ -87,6 +92,7 @@ void _getInput(String what, _InputFn fn) {
 void keyQoS() => _getInput('QoS/ToS bits', parseQoS);
 void keyTTL() => _getInput('TTL range', parseTTL);
 void keySize() => _getInput('payload size', parsePsize);
+void keyCycles() => _getInput('cycles', parseCycles);
 
 int printTitle(int y0, int w, {bool over = false, bool up = false}) {
   int y = y0;
@@ -95,6 +101,7 @@ int printTitle(int y0, int w, {bool over = false, bool up = false}) {
     List<String?> parts = [title];
     List<String?> subs = [];
     if (numeric != !dnsEnable) subs.add('DNS ${dnsEnable ? "on" : "off"}');
+    if (count != cntopt) subs.add('cycles $count');
     if ((firstTTL != ftlopt) || (lastTTL != ltlopt)) subs.add('TTL $firstTTL..$lastTTL');
     if (qos != qosopt) subs.add('QoS $qos');
     if (psize != pszopt) subs.add('psize $psize');

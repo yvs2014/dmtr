@@ -3,7 +3,7 @@ import 'dart:io' show Platform;
 import 'syslogger.dart' show Syslogger;
 
 final myname = (Platform.executable == 'dart') ? 'dmtr' : Platform.executable;
-final version = '0.1.35';
+final version = '0.1.36';
 String? optstr;
 String? addnote;
 bool pause = false;
@@ -32,6 +32,7 @@ int ftlopt = firstTTL;     // not toggled '-t' arg: firstTTL
 int ltlopt = lastTTL;      // not toggled '-t' arg: lastTTL
 int? pszopt;               // not toggled '-s' arg
 int? qosopt;               // not toggled '-q' arg
+int? cntopt;               // not toggled '-c' arg
 bool displayMode = true;   // if neither 'reportEnable' nor 'jsonEnable'
 const reportCycles = 10;   // for a report in json format and a plain one
 bool paramsChanged = false; // indicator of customization

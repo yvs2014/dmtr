@@ -42,9 +42,9 @@ main(List<String> args) async {
     final parsed = parser.parse(args);
     if (parsed['numeric'] != null) { numeric = parsed['numeric']; dnsEnable = !numeric; }
     if (parsed['cycles'] != null) {
-      int cnt = int.parse(parsed['cycles']);
-      if (cnt <= 0) throw 'Number($cnt) of cycles must be great than 0';
-      count = cnt;
+      var (e, _) = parseCycles(parsed['cycles']);
+      if (e != null) { throw e; }
+      else { cntopt = count; }
     }
     if (parsed['report'] != null) {
       reportEnable = parsed['report'];
@@ -89,6 +89,7 @@ main(List<String> args) async {
     usage(myname, parser.usage, 4);
   }
 
+  paramsChanged = false; // cleanup flag of changes, it needs for runtime customization only
   displayMode = !(reportEnable || jsonEnable);
   if (displayMode && !openDisplay()) return -1;
   List json = [];

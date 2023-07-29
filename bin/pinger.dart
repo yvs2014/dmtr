@@ -170,7 +170,7 @@ Future<void> _futuresInRange(String host, int min, int max, {bool reset = false}
   _futureslocked = true;
   min -= 1; max = (max > _hops) ? _hops : max;
   for (int i = min; i < max; i++) { // firstly add new ones
-    if (reset) await _stopPingAt(i, 'reset');
+    if (reset) await _stopPingAt(i, 'reset args');
     if (stat[i].ping == null) {
       int ttl = i + 1;
       int? cnt = count;
@@ -227,6 +227,7 @@ void _keyActions(String host) {
     case 'o': _resetPings(host, 'qos', keyQoS, () => 'qos bits: $qos', true);
     case 's': _resetPings(host, 'size', keySize, () => 'payload size: $psize', true);
     case 't': _resetPings(host, 'ttl', keyTTL, () => 'ttl range: $firstTTL..$lastTTL', false);
+    case 'c': _resetPings(host, 'count', keyCycles, () => 'cycles: $count', true);
   }
 }
 

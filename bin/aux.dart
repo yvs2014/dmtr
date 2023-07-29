@@ -35,6 +35,7 @@ typedef KeyHint = ({String key, int b, String hint}); // 'b' is index of bold ch
 final List<KeyHint> keyhints = [
   (key: 'help',  b: 0, hint: 'this help'),
   (key: 'dns',   b: 0, hint: 'toggle hostname/ipaddr show (note: on linux it works only in non-numeric mode)'),
+  (key: 'count', b: 0, hint: 'number of cycles to ping'),
   (key: 'ttl',   b: 0, hint: 'set TTL range in min,max format'),
   (key: 'qos',   b: 1, hint: 'set QoS bits'),
   (key: 'size',  b: 0, hint: 'payload size'),
@@ -69,7 +70,7 @@ final int maxHKey = keyhints.reduce((a, b) { return a.key.length > b.key.length 
   try {
     int sz = int.parse(s);
     if ((sz < psize_.min) || (sz > psize_.max)) return ('Payload size($sz) must be in range ${psize_.min}..${psize_.max}', null);
-    if (psize != sz) { psize = sz; paramsChanged = true; }
+    if (sz != psize) { psize = sz; paramsChanged = true; }
   } catch (e) { return ('Payload size: $e', null); }
   return (null, '$psize');
 }
@@ -78,8 +79,17 @@ final int maxHKey = keyhints.reduce((a, b) { return a.key.length > b.key.length 
   try {
     int q = int.parse(s);
     if ((q < 0) || (q > 255)) return ('QoS/ToS bits ($q) must be in range 0..255', null);
-    if (qos != q) { qos = q; paramsChanged = true; }
+    if (q != qos) { qos = q; paramsChanged = true; }
   } catch (e) { return ('QoS/ToS: $e', null); }
   return (null, '$qos');
+}
+
+(String?, String?) parseCycles(String s) {
+  try {
+    int c = int.parse(s);
+    if (c <= 0) return ('Number($c) of cycles must be great than 0', null);
+    if (c != count) { count = c; paramsChanged = true; }
+  } catch (e) { return ('Cycles: $e', null); }
+  return (null, '$count');
 }
 

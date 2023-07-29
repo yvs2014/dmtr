@@ -1,3 +1,6 @@
+## 0.1.36
+- add 'count/cycles' runtime customization
+
 ## 0.1.35
 - do not restart pings unless params have been changed (runtime customization)
 
