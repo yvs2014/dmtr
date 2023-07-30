@@ -210,22 +210,26 @@ void _keyActions(String host) {
   if (_postclearNote) { addnote = null; _postclearNote = false; }
   if (_keyProcessing) return;
   switch (getKey()) {
-    case 'h': keyHelp(); showStat(host, stat, _hops);
-      logger?.p("action 'help'");
+    case 'c': _resetPings(host, 'count', keyCycles, () => 'cycles: $count', true);
     case 'd': if (!numeric) dnsEnable = !dnsEnable;
       logger?.p("action 'dns': dnsEnable=$dnsEnable");
-    case 'c': _resetPings(host, 'count', keyCycles, () => 'cycles: $count', true);
-    case 't': _resetPings(host, 'ttl', keyTTL, () => 'ttl range: $firstTTL..$lastTTL', false);
-    case 'o': _resetPings(host, 'qos', keyQoS, () => 'qos bits: $qos', true);
+    case 'i': _resetPings(host, 'interval', keyIval, () => 'interval: $interval', true);
+    case 'p': _resetPings(host, 'payload', keyPayload, () => 'payload pattern: $payload', true);
+    case 'q': _resetPings(host, 'qos', keyQoS, () => 'qos bits: $qos', true);
     case 's': _resetPings(host, 'size', keySize, () => 'payload size: $psize', true);
-    case 'l': _resetPings(host, 'payload', keyPayload, () => 'payload pattern: $payload', true);
-    case 'r':
+    case 't': _resetPings(host, 'ttl', keyTTL, () => 'ttl range: $firstTTL..$lastTTL', false);
+    case 'h':
+    case 'H': keyHelp(); showStat(host, stat, _hops);
+      logger?.p("action 'help'");
+    case ' ':
+    case 'P': pause = !pause; addnote = pause ? ': output in pause' : null;
+      logger?.p("action 'pause': pause=$pause");
+    case 'R':
       logger?.p("action 'reset'");
       addnote = ': resetting...'; _postclearNote = true;
       _resetStats();
-    case 'p': pause = !pause; addnote = pause ? ': output in pause' : null;
-      logger?.p("action 'pause': pause=$pause");
-    case 'q':
+    case 'x':
+    case 'Q':
       logger?.p("action 'quit'");
       addnote = ': quitting...';
       for (int i = 0; i < maxTTL; i++) { _stopPingAt(i, 'quit'); }
@@ -236,7 +240,7 @@ Future<void> pingHops(String host) async {
   _clearPings();
   Timer? pingTimer, kbdTimer;
   if (displayMode) {
-    pingTimer = Timer.periodic(Duration(seconds: interval), (_) => showStat(host, stat, _hops));
+    pingTimer = Timer.periodic(Duration(seconds: 1), (_) => showStat(host, stat, _hops));
     kbdTimer = Timer.periodic(Duration(milliseconds: 100), (_) => _keyActions(host));
   }
   await _futuresInRange(host, firstTTL, lastTTL);

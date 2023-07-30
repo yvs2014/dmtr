@@ -89,11 +89,12 @@ void _getInput(String what, _InputFn fn) {
   pause = false;
 }
 
-void keyQoS() => _getInput('QoS/ToS bits', parseQoS);
-void keyTTL() => _getInput('TTL range', parseTTL);
-void keySize() => _getInput('payload size', parsePsize);
 void keyCycles() => _getInput('cycles', parseCycles);
+void keyIval() => _getInput('interval', parseIval);
 void keyPayload() => _getInput('payload pattern', parsePayload);
+void keyQoS() => _getInput('QoS/ToS bits', parseQoS);
+void keySize() => _getInput('payload size', parseSize);
+void keyTTL() => _getInput('TTL range', parseTTL);
 
 int printTitle(int y0, int w, {bool over = false, bool up = false}) {
   int y = y0;
@@ -103,6 +104,7 @@ int printTitle(int y0, int w, {bool over = false, bool up = false}) {
     List<String?> subs = [];
     if (numeric != !dnsEnable) subs.add('DNS ${dnsEnable ? "on" : "off"}');
     if (count != cntopt) subs.add('cycles $count');
+    if (interval != ivalopt) subs.add('interval ${interval}s');
     if ((firstTTL != ftlopt) || (lastTTL != ltlopt)) subs.add('TTL $firstTTL..$lastTTL');
     if (qos != qosopt) subs.add('QoS $qos');
     if (psize != pszopt) subs.add('psize $psize');

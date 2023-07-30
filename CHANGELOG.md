@@ -1,3 +1,8 @@
+## 0.1.40
+- add 'interval' runtime customization
+- runtime aux keys in uppercase (Pause, Reset, Quit, Help)
+- add [spacebar] alias to [P]ause key, [x] to [Q]uit, [h] to [H]elp
+
 ## 0.1.39
 - add -a option (address|interface for 'ping -I')
 - keep options in lowercase until it's possible (Q -> q)

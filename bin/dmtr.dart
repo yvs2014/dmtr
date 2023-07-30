@@ -50,8 +50,9 @@ main(List<String> args) async {
       else { cntopt = count; }
     }
     if (parsed['interval'] != null) {
-      interval = int.parse(parsed['interval']);
-      if (interval <= 0) throw 'Interval($interval) in seconds must be great than 0';
+      var (e, _) = parseIval(parsed['interval']);
+      if (e != null) { throw e; }
+      else { ivalopt = interval; }
     }
     if (parsed['payload'] != null) {
       var (e, _) = parsePayload(parsed['payload']);
@@ -64,7 +65,7 @@ main(List<String> args) async {
       else { qosopt = qos; }
     }
     if (parsed['size'] != null) {
-      var (e, _) = parsePsize(parsed['size']);
+      var (e, _) = parseSize(parsed['size']);
       if (e != null) { throw e; }
       else { pszopt = psize; }
     }
