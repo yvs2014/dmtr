@@ -15,7 +15,7 @@ import 'syslogger.dart' show probeSyslogger, Syslogger;
 
 void usage(String name, help, int indent) {
   final br = sprintf('\n%*s', [indent, '']);
-  print("Usage: $name [-nrj46h] [-c cycles] [-i interval] [-s size] [-t [minTTL][,maxTTL]] [-Q QoS] [-p hex] [--syslog] TARGET ...$br${help.replaceAll('\n', br)}");
+  print("Usage: $name [-achijnpqrst46] TARGET ...$br${help.replaceAll('\n', br)}");
   exit(-1);
 }
 
@@ -26,12 +26,13 @@ main(List<String> args) async {
 
   // Parse arguments
   final parser = ArgParser();
-  parser.addOption('cycles',   abbr: 'c', help: 'Run <number> cycles per target (default nolimit)', valueHelp: 'number');
+  parser.addOption('address',  abbr: 'a', help: 'Source address or interface name', valueHelp: 'addr|iface');
+  parser.addOption('cycles',   abbr: 'c', help: 'Run <number> cycles per target', valueHelp: 'number');
   parser.addOption('interval', abbr: 'i', help: 'Interval in seconds between pings (default $interval)', valueHelp: 'seconds');
+  parser.addOption('payload',  abbr: 'p', help: 'Payload pattern in hex notation, max 16bytes/32hexchars', valueHelp: 'hexchars');
+  parser.addOption('qos',      abbr: 'q', help: 'QoS/ToS byte to set', valueHelp: 'bits');
   parser.addOption('size',     abbr: 's', help: 'Payload size (default ${psize_.def})', valueHelp: 'bytes');
-  parser.addOption('payload',  abbr: 'p', help: 'Payload pattern in hex notation, max 16bytes/32hexchars (default is not set)', valueHelp: 'hexchars');
   parser.addOption('ttl',      abbr: 't', help: 'TTL range to ping, it can be also min or max only (default $firstTTL,$lastTTL)', valueHelp: 'min,max');
-  parser.addOption('qos',      abbr: 'Q', help: 'QoS/ToS byte to set (default is not set)', valueHelp: 'bits');
   parser.addFlag('numeric', abbr: 'n', help: 'Numeric output (i.e. disable DNS resolve)', negatable: false);
   parser.addFlag('report',  abbr: 'r', help: 'Print simple report at exit', negatable: false);
   parser.addFlag('json',    abbr: 'j', help: 'Print report in JSON format', negatable: false);
@@ -41,24 +42,26 @@ main(List<String> args) async {
   parser.addFlag('syslog',  help: 'Syslog for debug', negatable: false);
   try {
     final parsed = parser.parse(args);
-    if (parsed['numeric'] != null) { numeric = parsed['numeric']; dnsEnable = !numeric; }
+    // options with args
+    if (parsed['address'] != null) addrface = parsed['address'];
     if (parsed['cycles'] != null) {
       var (e, _) = parseCycles(parsed['cycles']);
       if (e != null) { throw e; }
       else { cntopt = count; }
     }
-    if (parsed['report'] != null) {
-      reportEnable = parsed['report'];
-      if (reportEnable) count ??= reportCycles;
-    }
-    if (parsed['json'] != null) {
-      jsonEnable = parsed['json'];
-      if (jsonEnable) count ??= reportCycles;
+    if (parsed['interval'] != null) {
+      interval = int.parse(parsed['interval']);
+      if (interval <= 0) throw 'Interval($interval) in seconds must be great than 0';
     }
     if (parsed['payload'] != null) {
       var (e, _) = parsePayload(parsed['payload']);
       if (e != null) { throw e; }
       else { pldopt = payload; }
+    }
+    if (parsed['qos'] != null) {
+      var (e, _) = parseQoS(parsed['qos']);
+      if (e != null) { throw e; }
+      else { qosopt = qos; }
     }
     if (parsed['size'] != null) {
       var (e, _) = parsePsize(parsed['size']);
@@ -70,22 +73,24 @@ main(List<String> args) async {
       if (e != null) { throw e; }
       else { ftlopt = firstTTL; ltlopt = lastTTL; }
     }
-    if (parsed['qos'] != null) {
-      var (e, _) = parseQoS(parsed['qos']);
-      if (e != null) { throw e; }
-      else { qosopt = qos; }
-    }
-    if (parsed['interval'] != null) {
-      interval = int.parse(parsed['interval']);
-      if (interval <= 0) throw 'Interval($interval) in seconds must be great than 0';
-    }
+    // options without args
     ipv4only = parsed['ipv4'] ? true : null;
     ipv6only = parsed['ipv6'] ? true : null;
     if (parsed['help'] ?? false) usage(myname, parser.usage, 4);
+    if (parsed['numeric'] != null) { numeric = parsed['numeric']; dnsEnable = !numeric; }
+    if (parsed['json'] != null) {
+      jsonEnable = parsed['json'];
+      if (jsonEnable) count ??= reportCycles;
+    }
+    if (parsed['report'] != null) {
+      reportEnable = parsed['report'];
+      if (reportEnable) count ??= reportCycles;
+    }
     if (parsed['syslog'] ?? false) {
       { final failed = await probeSyslogger(); if (failed != null) { print(failed); exit(-1); }}
       logger = Syslogger(id: pid, tag: myname);
     }
+    // rest
     if (parsed.rest.isEmpty) throw "TARGET host is not set";
     optstr = args.where((a) => !parsed.rest.contains(a)).join(' ');
     targets = parsed.rest;

@@ -1,3 +1,7 @@
+## 0.1.39
+- add -a option (address|interface for 'ping -I')
+- keep options in lowercase until it's possible (Q -> q)
+
 ## 0.1.38
 - add option string to json output
 
