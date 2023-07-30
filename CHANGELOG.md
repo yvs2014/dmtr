@@ -1,3 +1,7 @@
+## 0.1.41
+- add minimal manual page and Makefile
+- fix ivalopt typo
+
 ## 0.1.40
 - add 'interval' runtime customization
 - runtime aux keys in uppercase (Pause, Reset, Quit, Help)

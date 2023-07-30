@@ -3,7 +3,7 @@ import 'dart:io' show Platform;
 import 'syslogger.dart' show Syslogger;
 
 final myname = (Platform.executable == 'dart') ? 'dmtr' : Platform.executable;
-final version = '0.1.40';
+final version = '0.1.41';
 String? optstr;
 String? addnote;
 bool pause = false;
@@ -33,7 +33,7 @@ const maxTTL = 30; // suppose it's enough for today's internet
 final psize_ = (def: 56, min: 16, max: 9000 - 20 - 8);
 bool numeric = false;      // not toggled dnsEnable
 int? cntopt;               // not toggled '-c' arg
-int? ivalopt;              // not toggled '-i' arg
+int ivalopt = interval;    // not toggled '-i' arg
 String? pldopt;            // not toggled '-p' arg
 int? qosopt;               // not toggled '-q' arg
 int? pszopt;               // not toggled '-s' arg
