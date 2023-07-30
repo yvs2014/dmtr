@@ -1,3 +1,6 @@
+## 0.1.42
+- add script for .deb package building
+
 ## 0.1.41
 - add minimal manual page and Makefile
 - fix ivalopt typo

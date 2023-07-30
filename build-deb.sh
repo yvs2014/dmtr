@@ -1,0 +1,41 @@
+:
+
+# build depends on: dpkg-dev devscripts debhelper
+chk_cmd() {
+  command -v "$1" >/dev/null && return
+  echo "FAIL: '$1' is mandatory for packaging, please install '$2'"
+  exit 1
+}
+chk_cmd dpkg-buildpackage dpkg-dev
+chk_cmd dch devscripts
+chk_cmd dh debhelper
+
+set -e
+basever='0.1'
+command -v git >/dev/null && rev="$(git rev-list HEAD | sed -n '$=')" || rev=
+[ -n "$rev" ] && vers="$basever.$rev" || vers="$basever"
+arch="$(dpkg-architecture -qDEB_BUILD_ARCH)"
+dist="$(lsb_release -cs)"
+name="dmtr"
+ddir="debs"
+nra="$ddir/${name}_${vers}_$arch"
+chf="debian/changelog"
+
+mkdir -p "$ddir"
+rm -f "$chf.tmp"
+dch --create -c "$chf.tmp" --package="$name" -v "$vers" -D "$dist" -u "low" -M \
+  "$name a system ping wrapper for network diagnostic"
+
+mv "$chf.tmp" "$chf"
+
+bi_file="$nra.buildinfo"
+ch_file="$nra.changes"
+dpkg-buildpackage --help | grep -q buildinfo-file && \
+  BOUT="--buildinfo-file=$bi_file" COUT="--changes-file=$ch_file" || \
+  BOUT="--buildinfo-option=-O$bi_file" COUT="--changes-option=-O$ch_file" DH_OPTIONS="--destdir=$ddir"
+
+dpkg-buildpackage -b -tc --no-sign \
+  --buildinfo-option="-u$ddir" $BOUT \
+  --changes-option="-u$ddir" $COUT && \
+  (echo "\nPackages in $ddir/:"; ls -l "$ddir")
+

@@ -4,6 +4,8 @@
 .packages
 build/
 pubspec.lock
+debs/
+debian/changelog
 
 # Directory created by dartdoc
 doc/api/
@@ -24,5 +26,4 @@ doc/api/
 
 # Compiled app
 dmtr
-dmtr.exe
 

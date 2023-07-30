@@ -1,0 +1,13 @@
+Source: dmtr
+Section: net
+Priority: optional
+Maintainer: mantainer <VSYakovetsky@gmail.com>
+Rules-Requires-Root: no
+Build-Depends: dart
+Standards-Version: 4.6.2
+Homepage: https://github.com/yvs2014/dmtr
+
+Package: dmtr
+Architecture: any
+Description: A system ping wrapper
+ A network diagnostic tool based on parsing system ping output with functionality of traceroute and ncurses look of mtr

@@ -1,2 +1,2 @@
 # dmtr
-system ping wrapper inspired by 'mtr' look
+a system ping wrapper for network diagnostic inspired by 'mtr' look
