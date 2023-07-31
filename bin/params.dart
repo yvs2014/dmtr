@@ -2,8 +2,8 @@
 import 'dart:io' show Platform;
 import 'syslogger.dart' show Syslogger;
 
-final myname = (Platform.executable == 'dart') ? 'dmtr' : Platform.executable;
-final version = '0.1.42';
+final myname = (Platform.executable == 'dart') ? 'dmtr' : Platform.executable.split('/').last;
+final version = '0.1.43';
 String? optstr;
 String? addnote;
 bool pause = false;

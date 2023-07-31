@@ -1,3 +1,6 @@
+## 0.1.43
+- add snapcraft.yaml to build .snap package
+
 ## 0.1.42
 - add script for .deb package building
 

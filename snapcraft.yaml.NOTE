@@ -1,0 +1,2 @@
+Snap 'ping' needs ':network-control' plug to work and it's not connected automatically.
+So that run once 'snap connect dmtr:network-control :network-control' after dmtr.snap installation.

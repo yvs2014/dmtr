@@ -12,6 +12,8 @@ FILE1='pubspec.yaml'
 PATT1='version:'
 FILE2='bin/params.dart'
 PATT2='final version ='
+FILE3='snapcraft.yaml'
+PATT3='version:'
 
 
 [ $# -lt 1 ] && { echo "Use: $(basename $0) 'string with comment'"; exit 1; }
@@ -33,6 +35,8 @@ next=$(($vers + 1))
 sed -i "s/^\($PATT1\).*/\1 $VERPRFX.$next/" $FILE1
 [ -n "$BACKUP" ] && cp "$FILE2" "/tmp/$(basename $$FILE2).bk"
 sed -i "s/^\($PATT2\).*/\1 \'$VERPRFX.$next\';/" $FILE2
+[ -n "$BACKUP" ] && cp "$FILE3" "/tmp/$(basename $$FILE3).bk"
+sed -i "s/^\($PATT3\).*/\1 \'$VERPRFX.$next-git\'/" $FILE3
 
 [ -n "$BACKUP" ] && cp "$CHANGELOG" "/tmp/$(basename $CHANGELOG).bk"
 

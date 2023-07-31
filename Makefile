@@ -1,13 +1,12 @@
 
 NAME = dmtr
-DC   = dart
 PREFIX ?= /usr/local
 BASEDIR = $(DESTDIR)$(PREFIX)
 MANDIR ?= $(BASEDIR)/share/man/man1
 
 $(NAME):
 	dart pub get
-	$(DC) compile exe -o $@ bin/$@.dart
+	dart compile exe -o $@ bin/$@.dart
 
 install: $(NAME)
 	@mkdir -p $(BASEDIR)/bin

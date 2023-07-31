@@ -1,0 +1,48 @@
+name: dmtr
+adopt-info: dmtr
+base: core22
+version: '0.1.43-git'
+summary: a system ping wrapper for network diagnostic
+description: |
+  A network diagnostic tool based on parsing system 'ping' output
+  with functionality of 'traceroute' and ncurses look of 'mtr'
+
+architectures:
+  - build-on: amd64
+grade: devel # must be 'stable' to release into candidate/stable channels
+confinement: strict
+
+apps:
+  dmtr:
+    command: usr/bin/dmtr
+    plugs:
+      - network
+      - network-control
+#      - system-observe # for dart itself?
+
+parts:
+  dmtr:
+    plugin: make
+    source-type: git
+    source-depth: 1
+    source: https://github.com/yvs2014/dmtr.git
+    build-packages:
+      - build-essential
+      - libncurses-dev
+      - curl
+    build-environment:
+      - PREFIX: /usr
+    override-build: |
+      apt install -y apt-transport-https                                                                              
+      curl -o- https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/dart.gpg
+      echo 'deb [signed-by=/usr/share/keyrings/dart.gpg] https://storage.googleapis.com/download.dartlang.org/linux/debian stable main' | tee /etc/apt/sources.list.d/dart_stable.list
+      apt update             
+      apt install -y dart
+      craftctl default
+    stage-packages:
+      - iputils-ping
+      - libncurses6
+    prime:
+      - usr/bin/dmtr
+      - usr/share/man/man1/dmtr.1.gz
+

@@ -6,6 +6,7 @@ build/
 pubspec.lock
 debs/
 debian/changelog
+dmtr_*.snap
 
 # Directory created by dartdoc
 doc/api/
