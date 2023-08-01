@@ -1,5 +1,8 @@
+## 0.1.44
+- switch snap builds to flutter.dart and add arm64,ppc64el
+
 ## 0.1.43
-- add snapcraft.yaml to build .snap package
+- add snapcraft.yaml to build .snap package (successfully 'apt install dart' on amd64 only)
 
 ## 0.1.42
 - add script for .deb package building

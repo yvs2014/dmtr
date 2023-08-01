@@ -1,7 +1,7 @@
 name: dmtr
 adopt-info: dmtr
 base: core22
-version: '0.1.43-git'
+version: '0.1.44-git'
 summary: a system ping wrapper for network diagnostic
 description: |
   A network diagnostic tool based on parsing system 'ping' output
@@ -9,6 +9,8 @@ description: |
 
 architectures:
   - build-on: amd64
+  - build-on: arm64
+  - build-on: ppc64el
 grade: devel # must be 'stable' to release into candidate/stable channels
 confinement: strict
 
@@ -29,15 +31,12 @@ parts:
     build-packages:
       - build-essential
       - libncurses-dev
-      - curl
     build-environment:
       - PREFIX: /usr
     override-build: |
-      apt install -y apt-transport-https                                                                              
-      curl -o- https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/dart.gpg
-      echo 'deb [signed-by=/usr/share/keyrings/dart.gpg] https://storage.googleapis.com/download.dartlang.org/linux/debian stable main' | tee /etc/apt/sources.list.d/dart_stable.list
-      apt update             
-      apt install -y dart
+      apt install -y snapd
+      snap install flutter --classic
+      flutter --version
       craftctl default
     stage-packages:
       - iputils-ping
