@@ -6,7 +6,7 @@
 .Nd a system ping wrapper for network diagnostic
 .Sh SYNOPSIS
 .Nm
-.Op Fl achijnpqrst46
+.Op Fl achijnpqrstw46
 TARGET ...
 .Sh DESCRIPTION
 A network diagnostic tool based on parsing system
@@ -32,7 +32,9 @@ of cycles per target
 .It Fl i, Fl -interval Ar SECONDS
 Interval in
 .Ar seconds
-between pings. Default 1
+between pings
+.br
+Default 1
 .It Fl p, Fl -payload Ar PATTERN
 Payload
 .Ar pattern
@@ -44,7 +46,9 @@ QoS/ToS
 .It Fl s, Fl -size Ar BYTES
 Payload
 .Ar size ,
-minimum is 16 (timestamp size), maximum is 9000-20-8. Default 56
+minimum is 16 (timestamp size), maximum is 9000-20-8
+.br
+Default 56
 .It Fl t, Fl -ttl Ar MIN,MAX
 TTL
 .Ar range
@@ -52,7 +56,14 @@ to ping, it can be partially set as
 .Ar MIN
 or as
 .Ar ,MAX
-too. Default 1,30
+too
+.br
+Default 1,30
+.It Fl w, Fl -whois Ar KEYS
+RIS whois keys which match "[acdr]+|" pattern (AS Country Description Route)
+.br
+Default "ca" (Country AS) is aliased to
+.Fl w-
 .It Fl n, Fl -numeric
 Numeric output (i.e. disable DNS resolve)
 .br
@@ -60,9 +71,13 @@ Note: if you set a
 .Ar target
 as IP-address, pings will run in numeric mode too
 .It Fl r, Fl -report
-Print simple report at exit. Default number of cycles is 10
+Print simple report at exit
+.br
+Default number of cycles is 10 in report mode
 .It Fl j, Fl -json
-Print report in JSON format at exit. Default number of cycles is 10
+Print report in JSON format at exit
+.br
+Default number of cycles is 10 in JSON output mode
 .It Fl 4, Fl -ipv4
 IPv4 only
 .It Fl 6, Fl -ipv6

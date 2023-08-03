@@ -15,7 +15,7 @@ import 'syslogger.dart' show probeSyslogger, Syslogger;
 
 void usage(String name, help, int indent) {
   final br = sprintf('\n%*s', [indent, '']);
-  print("Usage: $name [-achijnpqrst46] TARGET ...$br${help.replaceAll('\n', br)}");
+  print("Usage: $name [-achijnpqrstw46] TARGET ...$br${help.replaceAll('\n', br)}");
   exit(-1);
 }
 
@@ -33,6 +33,7 @@ main(List<String> args) async {
   parser.addOption('qos',      abbr: 'q', help: 'QoS/ToS byte to set', valueHelp: 'bits');
   parser.addOption('size',     abbr: 's', help: 'Payload size (default ${psize_.def})', valueHelp: 'bytes');
   parser.addOption('ttl',      abbr: 't', help: 'TTL range to ping, it can be also min or max only (default $firstTTL,$lastTTL)', valueHelp: 'min,max');
+  parser.addOption('whois',    abbr: 'w', help: 'RIS whois keys "[acdr]+" for AS/Country/Description/Route (\'-\' is for default "$whoKeysDef")', valueHelp: 'chars');
   parser.addFlag('numeric', abbr: 'n', help: 'Numeric output (i.e. disable DNS resolve)', negatable: false);
   parser.addFlag('report',  abbr: 'r', help: 'Print simple report at exit', negatable: false);
   parser.addFlag('json',    abbr: 'j', help: 'Print report in JSON format', negatable: false);
@@ -73,6 +74,11 @@ main(List<String> args) async {
       var (e, _) = parseTTL(parsed['ttl']);
       if (e != null) { throw e; }
       else { ftlopt = firstTTL; ltlopt = lastTTL; }
+    }
+    if (parsed['whois'] != null) {
+      var (e, _) = parseWhoKeys(parsed['whois']);
+      if (e != null) { throw e; }
+      else { whoopt = whoKeys; }
     }
     // options without args
     ipv4only = parsed['ipv4'] ? true : null;

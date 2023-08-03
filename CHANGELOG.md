@@ -1,3 +1,9 @@
+## 0.1.46
+- add -w option (whois info: AS Country etc.)
+
+## 0.1.45
+- rm ppc64el from snap builds
+
 ## 0.1.44
 - switch snap builds to flutter.dart and add arm64,ppc64el
 

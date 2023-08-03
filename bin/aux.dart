@@ -1,19 +1,19 @@
 
 import 'package:sprintf/sprintf.dart' show sprintf;
+import 'riswhois.dart' show who2titles;
 import 'params.dart';
 
 const statfmt = '%-4s %-5s %-4s %-4s %-4s  %-4s %-4s';
 final statMax = sprintf(statfmt, List<String>.filled(7, '')).length;
 
 // left(host) and right(stat) parts of stats header
-const hostTitle = 'Hops';
+const hopTitle = 'Hops';
 final statTitle = sprintf(statfmt, ['Loss', 'Sent', 'Last', 'Best', 'Wrst', 'Avrg', 'Jttr']);
 const lindent = 4; // lpart's indent
 String? _title;
 get title => _title;
-set title(host) {
-  _title = ['$myname-$version', optstr, host].where((a) => (a != null) && a.isNotEmpty).join(' ');
-}
+set title(host) { _title = ['$myname-$version', optstr, host].where((a) => (a != null) && a.isNotEmpty).join(' '); }
+get hostTitle => who2titles(hopTitle);
 
 // extra messaging
 const _unreachMesg = 'Destination is unreachable';
@@ -40,6 +40,7 @@ final List<KeyHint> keyhints = [
   (key: 'qos',     b: 0, hint: 'set QoS bits'),
   (key: 'size',    b: 0, hint: 'payload size'),
   (key: 'ttl',     b: 0, hint: 'set TTL range in min,max format'),
+  (key: 'who',     b: 0, hint: "toggle whois info diaplying (note: press 'W' to set whois-fields in [acdr]+ format)"),
   (key: 'Reset',   b: 0, hint: 'reset stats'),
   (key: 'Pause',   b: 0, hint: 'pause/resume'),
   (key: 'Quit',    b: 0, hint: 'stop and exit'),
@@ -111,5 +112,19 @@ final RegExp _hex = RegExp(r'^([\da-fA-F]{1,32})$');
     }
   } catch (e) { return ('TTL: $e', null); }
   return (null, '$firstTTL..$lastTTL');
+}
+
+final RegExp _riskeys = RegExp(r'^([acdr]+)$');
+(String?, String?) parseWhoKeys(String s) {
+  try {
+    // special case1 '' : unset
+    if (s == '')  { if (whoKeys != null) { whoKeys = null; paramsChanged = true; }}
+    else {
+      if (s == '-') s = whoKeysDef; // special case2 '-': set default
+      if (!_riskeys.hasMatch(s)) return ("whois keys ($s) must match '[acdr]+' pattern", null);
+      if (s != whoKeys) { whoKeys = String.fromCharCodes(s.codeUnits.toSet().toList()); paramsChanged = true; }
+    }
+  } catch (e) { return ('whois keys: $e', null); }
+  return (null, whoKeys);
 }
 

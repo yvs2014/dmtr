@@ -95,6 +95,7 @@ void keyPayload() => _getInput('payload pattern', parsePayload);
 void keyQoS() => _getInput('QoS/ToS bits', parseQoS);
 void keySize() => _getInput('payload size', parseSize);
 void keyTTL() => _getInput('TTL range', parseTTL);
+void keyWhois() => _getInput('RIS whois keys', parseWhoKeys);
 
 int printTitle(int y0, int w, {bool over = false, bool up = false}) {
   int y = y0;
@@ -109,6 +110,7 @@ int printTitle(int y0, int w, {bool over = false, bool up = false}) {
     if (qos != qosopt) subs.add('QoS $qos');
     if (psize != pszopt) subs.add('psize $psize');
     if (payload != pldopt) subs.add('payload $payload');
+    if (whoKeys != whoopt) subs.add("whois '$whoKeys'");
     if (subs.isNotEmpty) { var s = subs.where((p) => (p != null) && p.isNotEmpty).join(', '); parts.add('($s)'); }
     if (addnote != null) parts.add(addnote);
     if (!gotdata) parts.add(': no data yet');
@@ -153,9 +155,9 @@ void showStat(String host, List<Hop> stat, int hops) {
       int end = (hops < lastTTL) ? hops : lastTTL;
       for (int i = firstTTL - 1; i < end; i++) {
         String no = sprintf('%2d. ', [i + 1]);
-        String addr = stat[i].addr.isNotEmpty ? stat[i].lpart(0) : '';
+        String addr = stat[i].info.isNotEmpty ? stat[i].lpart(0) : '';
         mvaddstr(y++, 0, sprintf('%*s%-*.*s %s', [lindent, no, w, w, addr, stat[i].rpart]));
-        for (int j = 1; j < stat[i].addr.length; j++) {
+        for (int j = 1; j < stat[i].info.length; j++) {
           mvaddstr(y++, 0, sprintf('%*s%s', [lindent, '', stat[i].lpart(j)]));
         }
         if (stat[i].unreach) mvaddstr(y++, 0, unreachMesg);

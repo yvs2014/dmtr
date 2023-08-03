@@ -7,12 +7,14 @@ import 'params.dart';
 import 'dcurses.dart';
 import 'sysping.dart' show Ping, Data, Status;
 import 'aux.dart' show addFail;
+import 'riswhois.dart';
 
 late int _hops;
 int get hops => _hops;
 List<Hop> stat = [];
 var _futures = List<Future<void>?>.filled(maxTTL, null, growable: false); // ping futures
 bool _futureslocked = false;
+Timer? _whoisTimer;
 
 
 void _clearPings() {
@@ -51,18 +53,18 @@ TsUsec? _parseTS(String s) {
 }
 
 void _addAddrNameAt(int ndx, String addr, String? name) {
-  final an = stat[ndx].addr.indexWhere((a) => ((a != null) ? (a == addr) : false));
+  final an = stat[ndx].info.indexWhere((i) => ((i.addr != null) ? (i.addr == addr) : false));
   if (an < 0) { // new addr
-    if (stat[ndx].addr.length >= maxNamesPerHop) { stat[ndx].addr.removeAt(0); stat[ndx].name.removeAt(0); }
-    stat[ndx].addr.add(addr);
-    stat[ndx].name.add(name);
+    if (stat[ndx].info.length >= maxNamesPerHop) stat[ndx].info.removeAt(0);
+    stat[ndx].info.add((addr: addr, name: name, whois: null));
     if (addr.length > maxHostaddr) maxHostaddr = addr.length;
     if (maxHostaddr > maxHostname) maxHostname = maxHostaddr;
     if ((name != null) && (name.length > maxHostname)) maxHostname = name.length;
-  } else if ((stat[ndx].name[an] == null) && (name != null)) { // if name is not set before
-    stat[ndx].name[an] = name;
+  } else if ((stat[ndx].info[an].name == null) && (name != null)) { // if name is not set before
+    stat[ndx].info[an] = (addr: stat[ndx].info[an].addr, name: name, whois: stat[ndx].info[an].whois);
     if (name.length > maxHostname) maxHostname = name.length;
   }
+  if (whoKeys != null) _whoisUpdate();
 }
 
 void _saveAddrName(int ndx, Data data) {
@@ -195,29 +197,45 @@ Future<void> _futuresInRange(String host, int min, int max, {bool reset = false}
 bool _postclearNote = false;
 bool _keyProcessing = false;
 
-void _resetPings(String host, String what, void Function() parser, String Function() inform, bool reset) {
+void _resetPings(String host, String what, void Function() parser, String Function() inform,
+    { bool reset = true, void Function()? fnOnChange }) {
   logger?.s("action '$what'");
   _keyProcessing = true; parser(); _keyProcessing = false;
   if (paramsChanged) {
     paramsChanged = false;
     _postclearNote = true;
     logger?.p(inform());
-    _futuresInRange(host, firstTTL, lastTTL, reset: reset);
+    (fnOnChange != null) ? fnOnChange() : _futuresInRange(host, firstTTL, lastTTL, reset: reset);
   } else { logger?.p('no changes in params'); }
 }
+
+String? _savedWhoKeys;
 
 void _keyActions(String host) {
   if (_postclearNote) { addnote = null; _postclearNote = false; }
   if (_keyProcessing) return;
   switch (getKey()) {
-    case 'c': _resetPings(host, 'count', keyCycles, () => 'cycles: $count', true);
+    case 'c': _resetPings(host, 'count', keyCycles, () => 'cycles: $count');
     case 'd': if (!numeric) dnsEnable = !dnsEnable;
       logger?.p("action 'dns': dnsEnable=$dnsEnable");
-    case 'i': _resetPings(host, 'interval', keyIval, () => 'interval: $interval', true);
-    case 'p': _resetPings(host, 'payload', keyPayload, () => 'payload pattern: $payload', true);
-    case 'q': _resetPings(host, 'qos', keyQoS, () => 'qos bits: $qos', true);
-    case 's': _resetPings(host, 'size', keySize, () => 'payload size: $psize', true);
-    case 't': _resetPings(host, 'ttl', keyTTL, () => 'ttl range: $firstTTL..$lastTTL', false);
+    case 'i': _resetPings(host, 'interval', keyIval, () => 'interval: $interval');
+    case 'p': _resetPings(host, 'payload', keyPayload, () => 'payload pattern: $payload');
+    case 'q': _resetPings(host, 'qos', keyQoS, () => 'qos bits: $qos');
+    case 's': _resetPings(host, 'size', keySize, () => 'payload size: $psize');
+    case 't': _resetPings(host, 'ttl', keyTTL, () => 'ttl range: $firstTTL..$lastTTL', reset: false);
+    case 'w':
+      if (whoKeys == null) {
+        whoKeys = _savedWhoKeys ?? whoKeysDef;
+        _whoisTimer = Timer.periodic(Duration(seconds: 2 * risTimeout), (_) => _whoisUpdate());
+      } else {
+        _savedWhoKeys = whoKeys; whoKeys = null;
+        _whoisTimer?.cancel(); _whoisTimer = null;
+      }
+    case 'W':
+      _resetPings(host, 'whois', keyWhois, () => 'whois keys: "$whoKeys"', fnOnChange: () {
+        _whoisTimer?.cancel();
+        _whoisTimer = (whoKeys == null) ? null : Timer.periodic(Duration(seconds: 2 * risTimeout), (_) => _whoisUpdate());
+      });
     case 'h':
     case 'H': keyHelp(); showStat(host, stat, _hops);
       logger?.p("action 'help'");
@@ -236,6 +254,31 @@ void _keyActions(String host) {
   }
 }
 
+Future<void> _waitWhoisReply(int i, int j) async {
+  stat[i].whoislock.add(j);
+  var addr = stat[i].info[j].addr;
+  if (addr != null) {
+    RIS? ris;
+    try { ris = await risWhois(addr); }
+    catch (e) { logger?.p('whois: $e'); }
+    finally { stat[i].info[j] = (addr: addr, name: stat[i].info[j].name, whois: ris); }
+  }
+  stat[i].whoislock.remove(j);
+}
+
+Future<void> _whoisUpdate() async {
+  if (whoKeys == null) return;
+  int end = (hops < lastTTL) ? hops : lastTTL;
+  List<Future<void>> list = [];
+  for (int i = firstTTL - 1; i < end; i++) {
+    for (int j = 0; j < stat[i].info.length; j++) {
+      if (stat[i].whoislock.contains(j)) continue;
+      if (stat[i].info[j].whois == null) list.add(_waitWhoisReply(i, j));
+    }
+  }
+  await Future.wait(list);
+}
+
 Future<void> pingHops(String host) async {
   _clearPings();
   Timer? pingTimer, kbdTimer;
@@ -243,6 +286,7 @@ Future<void> pingHops(String host) async {
     pingTimer = Timer.periodic(Duration(seconds: 1), (_) => showStat(host, stat, _hops));
     kbdTimer = Timer.periodic(Duration(milliseconds: 100), (_) => _keyActions(host));
   }
+  if (whoKeys != null) _whoisTimer = Timer.periodic(Duration(seconds: 2 * risTimeout), (_) => _whoisUpdate());
   await _futuresInRange(host, firstTTL, lastTTL);
   logger?.p("ping '$host' is started (interval=${interval}sec cycles=${count ?? 'nolimit'})");
   while (_futures.whereNotNull().isNotEmpty) {
@@ -251,6 +295,7 @@ Future<void> pingHops(String host) async {
     while (_futureslocked) { sleep(Duration(milliseconds: 1)); }
   }
   logger?.p("ping '$host' is finished");
+  _whoisTimer?.cancel();
   if (displayMode) {
     sleep(Duration(milliseconds: interval * 1000 ~/ 2));
     pingTimer?.cancel();

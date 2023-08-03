@@ -2,8 +2,8 @@
 import 'dart:io' show Platform;
 import 'syslogger.dart' show Syslogger;
 
-final myname = (Platform.executable == 'dart') ? 'dmtr' : Platform.executable.split('/').last;
-final version = '0.1.44';
+get myname { var exec = Platform.executable.split('/').last; return (exec == 'dart') ? 'dmtr' : exec; }
+final version = '0.1.46';
 String? optstr;
 String? addnote;
 bool pause = false;
@@ -26,6 +26,8 @@ int lastTTL = maxTTL;      //
 String? payload;           // -p payload pattern
 int? qos;                  // -q QoS/ToS bits
 int? psize;                // -s payload size
+String? whoKeys;           // -w riswhois-keys (default: CC, ASN)
+String whoKeysDef = 'ca';  //    default if not specified
 
 // default params
 const maxTTL = 30; // suppose it's enough for today's internet
@@ -39,6 +41,7 @@ int? qosopt;               // not toggled '-q' arg
 int? pszopt;               // not toggled '-s' arg
 int ftlopt = firstTTL;     // not toggled '-t' arg: firstTTL
 int ltlopt = lastTTL;      // not toggled '-t' arg: lastTTL
+String? whoopt = whoKeys;  // not toggled '-w' arg
 bool displayMode = true;   // if neither 'reportEnable' nor 'jsonEnable'
 const reportCycles = 10;   // for a report in json format and a plain one
 bool paramsChanged = false; // indicator of customization
