@@ -19,14 +19,8 @@ dist="$(lsb_release -cs)"
 name="dmtr"
 ddir="debs"
 nra="$ddir/${name}_${vers}_$arch"
-chf="debian/changelog"
 
 mkdir -p "$ddir"
-rm -f "$chf.tmp"
-dch --create -c "$chf.tmp" --package="$name" -v "$vers" -D "$dist" -u "low" -M \
-  "$name a system ping wrapper for network diagnostic"
-
-mv "$chf.tmp" "$chf"
 
 bi_file="$nra.buildinfo"
 ch_file="$nra.changes"
@@ -34,6 +28,7 @@ dpkg-buildpackage --help | grep -q buildinfo-file && \
   BOUT="--buildinfo-file=$bi_file" COUT="--changes-file=$ch_file" || \
   BOUT="--buildinfo-option=-O$bi_file" COUT="--changes-option=-O$ch_file" DH_OPTIONS="--destdir=$ddir"
 
+export DEBDIR="--destdir=$ddir"
 dpkg-buildpackage -b -tc --no-sign \
   --buildinfo-option="-u$ddir" $BOUT \
   --changes-option="-u$ddir" $COUT && \

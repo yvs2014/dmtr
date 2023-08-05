@@ -25,9 +25,13 @@ jobs:
           fetch-depth: 0
           ref: main
       - name: Install mandatory packages for building
-        run: ./apt_install_dart.sh && dart pub get
-      - name: Create executable with ${{matrix.compiler}}
-        run: dart compile exe -o dmtr bin/dmtr.dart
-      - name: Run on ${{matrix.os}}
-        run: ping -c1 google.com && ./dmtr -r google.com || ./dmtr -r 127.0.0.1
+        run: |
+          sudo apt install -y dpkg-dev devscripts debhelper
+          ./apt_install_dart.sh && dart pub get
+      - name: Create .deb package
+        run: |
+          ./build-deb.sh
+          sudo dpkg -i debs/dmtr_*_*.deb
+      - name: Test run
+        run: ping -c1 google.com && dmtr -r google.com || dmtr -r 127.0.0.1
 

@@ -1,6 +1,5 @@
 #!/usr/bin/make -f
 
-DEBDIR=debs
 DEB_BUILD_OPTIONS=nostrip
 
 %:
@@ -10,5 +9,5 @@ override_dh_auto_install:
 	dh_auto_install -- prefix=/usr PREFIX=/usr
 
 override_dh_builddeb:
-	dh_builddeb $@ --destdir="$(DEBDIR)"
+	dh_builddeb $@ $(DEBDIR)
 

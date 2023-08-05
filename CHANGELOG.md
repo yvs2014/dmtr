@@ -1,3 +1,6 @@
+## 0.1.48
+- deb+snap packaging related
+
 ## 0.1.47
 - add -f option (custom stat fields)
 

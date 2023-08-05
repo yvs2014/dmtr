@@ -1,7 +1,7 @@
 name: dmtr
 adopt-info: dmtr
 base: core22
-version: '0.1.47'
+version: '0.1.48'
 summary: a system ping wrapper for network diagnostic
 description: |
   A network diagnostic tool based on parsing system 'ping' output
@@ -10,7 +10,7 @@ description: |
 architectures:
   - build-on: amd64
   - build-on: arm64
-grade: devel # must be 'stable' to release into candidate/stable channels
+grade: stable
 confinement: strict
 
 apps:
@@ -25,7 +25,6 @@ parts:
   dmtr:
     plugin: make
     source-type: git
-    source-depth: 1
     source: https://github.com/yvs2014/dmtr.git
     build-packages:
       - build-essential
