@@ -42,7 +42,9 @@ class Hop {
     if (whoKeys != null) { var extra = who(n); if (extra.isNotEmpty) return '$extra $a'; }
     return a;
   }
-  String get rpart => (data.sent > 0) ? sprintf(statfmt, [loss, '${data.sent}', msec, best, wrst, avg, jttr]) : '';
+  String get rpart => (data.sent > 0) ? rpartFn({'l': loss, 's': '${data.sent}',
+    'm': msec, 'b': best, 'w': wrst, ' ': '', 'a': avg, 'j': jttr,
+  }) : '';
   bool get _ok => (data.wrst != 0);
   @override
   String toString() {

@@ -3,7 +3,7 @@ import 'dart:io' show Platform;
 import 'syslogger.dart' show Syslogger;
 
 get myname { var exec = Platform.executable.split('/').last; return (exec == 'dart') ? 'dmtr' : exec; }
-final version = '0.1.46';
+final version = '0.1.47';
 String? optstr;
 String? addnote;
 bool pause = false;
@@ -20,6 +20,9 @@ Syslogger? logger;         // --syslog
 // with args
 String? addrface;          // -a addr|iface
 int? count;                // -c count
+String statKeys = statKeysDef;  // -f stat-fields
+const statKeysDef = 'lsmbw aj'; // default if not specified
+const statKeysDesc = 'Loss Sent Last(msec) Best Worst <space> Average Jitter';
 int interval = 1;          // -i seconds
 int firstTTL = 1;          // -t minTTL,maxTTL
 int lastTTL = maxTTL;      //
@@ -27,7 +30,12 @@ String? payload;           // -p payload pattern
 int? qos;                  // -q QoS/ToS bits
 int? psize;                // -s payload size
 String? whoKeys;           // -w riswhois-keys (default: CC, ASN)
-String whoKeysDef = 'ca';  //    default if not specified
+const whoKeysDef = 'ca';   // default if not specified
+const whoPatt = 'acdr';    //
+const whoKeysDesc = 'AS Country Description Route';
+//
+List<String> statKeysList = statKeys.split('');
+List<String> whoKeysList = whoKeys?.split('') ?? [];
 
 // default params
 const maxTTL = 30; // suppose it's enough for today's internet
@@ -35,6 +43,7 @@ const maxTTL = 30; // suppose it's enough for today's internet
 final psize_ = (def: 56, min: 16, max: 9000 - 20 - 8);
 bool numeric = false;      // not toggled dnsEnable
 int? cntopt;               // not toggled '-c' arg
+String statopt = statKeys; // not toggled '-f' arg
 int ivalopt = interval;    // not toggled '-i' arg
 String? pldopt;            // not toggled '-p' arg
 int? qosopt;               // not toggled '-q' arg

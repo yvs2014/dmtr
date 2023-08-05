@@ -3,7 +3,7 @@ import 'dart:io' show Socket;
 import 'dart:async' show Completer;
 import 'dart:convert' show LineSplitter;
 import 'dart:typed_data' show Uint8List;
-import 'params.dart' show logger, whoKeys;
+import 'params.dart' show logger, whoKeys, whoKeysList;
 
 
 const risTimeout = 5; // in seconds
@@ -60,7 +60,7 @@ Future<RIS?> risWhois(String addr, { int? port, int? tout}) async {
 
 Map<String, dynamic> info2map(RIS info) {
   Map<String, dynamic> m = {};
-  for (var c in whoKeys?.split('') ?? []) {
+  for (var c in whoKeysList) {
     switch (c) {
       case 'a': m[_k.a] = info.a;
       case 'c': m[_k.c] = info.c;
@@ -72,10 +72,10 @@ Map<String, dynamic> info2map(RIS info) {
   return m;
 }
 
-String who2titles(String title) {
+String withWhoTitle(String title) {
   if (whoKeys == null) return title;
   List<String?> re = [];
-  for (var c in whoKeys?.split('') ?? []) { re.add(_titleMap[c]?[1]); }
+  for (var c in whoKeysList) { re.add(_titleMap[c]?[1]); }
   re.add(title);
   re.removeWhere((s) => s == null);
   return re.join(' ');
@@ -85,7 +85,7 @@ String _padInfo(String? s, String c) => (s ?? '??').padRight(_titleMap[c]?[1].le
 
 String who2info(RIS? info) {
   List<String?> re = [];
-  for (var c in whoKeys?.split('') ?? []) {
+  for (var c in whoKeysList) {
     switch (c) {
       case 'a': re.add(_padInfo(info?.a, c));
       case 'c': re.add(_padInfo(info?.c, c));

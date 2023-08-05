@@ -90,6 +90,7 @@ void _getInput(String what, _InputFn fn) {
 }
 
 void keyCycles() => _getInput('cycles', parseCycles);
+void keyFields() => _getInput('stat fields', parseStatKeys);
 void keyIval() => _getInput('interval', parseIval);
 void keyPayload() => _getInput('payload pattern', parsePayload);
 void keyQoS() => _getInput('QoS/ToS bits', parseQoS);
@@ -105,6 +106,7 @@ int printTitle(int y0, int w, {bool over = false, bool up = false}) {
     List<String?> subs = [];
     if (numeric != !dnsEnable) subs.add('DNS ${dnsEnable ? "on" : "off"}');
     if (count != cntopt) subs.add('cycles $count');
+    if (statKeys != statopt) subs.add("fields '$statKeys'");
     if (interval != ivalopt) subs.add('interval ${interval}s');
     if ((firstTTL != ftlopt) || (lastTTL != ltlopt)) subs.add('TTL $firstTTL..$lastTTL');
     if (qos != qosopt) subs.add('QoS $qos');
@@ -146,7 +148,7 @@ int printTitle(int y0, int w, {bool over = false, bool up = false}) {
 
 void showStat(String host, List<Hop> stat, int hops) {
   if (!displayMode) return;
-  int w = cols - (lindent + statMax + 2);
+  int w = (cols - (lindent + statTitle.length + 2)).toInt();
   if (pause) { printTitle(0, w, over: true); }
   else {
     clear();

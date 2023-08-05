@@ -30,13 +30,13 @@ done
 
 vers="$(git rev-list HEAD | $fltr $fargs | sed -n '$=')"
 next=$(($vers + 1))
-
+vn="$VERPRFX.$next"
 [ -n "$BACKUP" ] && cp "$FILE1" "/tmp/$(basename $FILE1).bk"
-sed -i "s/^\($PATT1\).*/\1 $VERPRFX.$next/" $FILE1
+sed -i "s/^\($PATT1\).*/\1 $vn/" $FILE1
 [ -n "$BACKUP" ] && cp "$FILE2" "/tmp/$(basename $$FILE2).bk"
-sed -i "s/^\($PATT2\).*/\1 \'$VERPRFX.$next\';/" $FILE2
+sed -i "s/^\($PATT2\).*/\1 \'$vn\';/" $FILE2
 [ -n "$BACKUP" ] && cp "$FILE3" "/tmp/$(basename $$FILE3).bk"
-sed -i "s/^\($PATT3\).*/\1 \'$VERPRFX.$next-git\'/" $FILE3
+sed -i "s/^\($PATT3\).*/\1 \'$vn\'/" $FILE3
 
 [ -n "$BACKUP" ] && cp "$CHANGELOG" "/tmp/$(basename $CHANGELOG).bk"
 

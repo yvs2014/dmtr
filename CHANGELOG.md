@@ -1,3 +1,6 @@
+## 0.1.47
+- add -f option (custom stat fields)
+
 ## 0.1.46
 - add -w option (whois info: AS Country etc.)
 

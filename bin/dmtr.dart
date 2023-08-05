@@ -28,12 +28,13 @@ main(List<String> args) async {
   final parser = ArgParser();
   parser.addOption('address',  abbr: 'a', help: 'Source address or interface name', valueHelp: 'addr|iface');
   parser.addOption('cycles',   abbr: 'c', help: 'Run <number> cycles per target', valueHelp: 'number');
+  parser.addOption('fields',   abbr: 'f', help: 'Statistics fields "[$statKeysDef]+" stand for:\n$statKeysDesc', valueHelp: 'chars');
   parser.addOption('interval', abbr: 'i', help: 'Interval in seconds between pings (default $interval)', valueHelp: 'seconds');
   parser.addOption('payload',  abbr: 'p', help: 'Payload pattern in hex notation, max 16bytes/32hexchars', valueHelp: 'hexchars');
   parser.addOption('qos',      abbr: 'q', help: 'QoS/ToS byte to set', valueHelp: 'bits');
   parser.addOption('size',     abbr: 's', help: 'Payload size (default ${psize_.def})', valueHelp: 'bytes');
   parser.addOption('ttl',      abbr: 't', help: 'TTL range to ping, it can be also min or max only (default $firstTTL,$lastTTL)', valueHelp: 'min,max');
-  parser.addOption('whois',    abbr: 'w', help: 'RIS whois keys "[acdr]+" for AS/Country/Description/Route (\'-\' is for default "$whoKeysDef")', valueHelp: 'chars');
+  parser.addOption('whois',    abbr: 'w', help: 'RIS whois keys "[$whoPatt]+" (default "$whoKeysDef") stand for:\n$whoKeysDesc', valueHelp: 'chars');
   parser.addFlag('numeric', abbr: 'n', help: 'Numeric output (i.e. disable DNS resolve)', negatable: false);
   parser.addFlag('report',  abbr: 'r', help: 'Print simple report at exit', negatable: false);
   parser.addFlag('json',    abbr: 'j', help: 'Print report in JSON format', negatable: false);
@@ -49,6 +50,11 @@ main(List<String> args) async {
       var (e, _) = parseCycles(parsed['cycles']);
       if (e != null) { throw e; }
       else { cntopt = count; }
+    }
+    if (parsed['fields'] != null) {
+      var (e, _) = parseStatKeys(parsed['fields']);
+      if (e != null) { throw e; }
+      else { statopt = statKeys; }
     }
     if (parsed['interval'] != null) {
       var (e, _) = parseIval(parsed['interval']);

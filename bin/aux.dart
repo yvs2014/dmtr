@@ -1,19 +1,20 @@
 
 import 'package:sprintf/sprintf.dart' show sprintf;
-import 'riswhois.dart' show who2titles;
+import 'riswhois.dart' show withWhoTitle;
 import 'params.dart';
 
-const statfmt = '%-4s %-5s %-4s %-4s %-4s  %-4s %-4s';
-final statMax = sprintf(statfmt, List<String>.filled(7, '')).length;
-
-// left(host) and right(stat) parts of stats header
-const hopTitle = 'Hops';
-final statTitle = sprintf(statfmt, ['Loss', 'Sent', 'Last', 'Best', 'Wrst', 'Avrg', 'Jttr']);
-const lindent = 4; // lpart's indent
+// title
 String? _title;
 get title => _title;
 set title(host) { _title = ['$myname-$version', optstr, host].where((a) => (a != null) && a.isNotEmpty).join(' '); }
-get hostTitle => who2titles(hopTitle);
+// left(host)
+const hopTitle = 'Hops';
+const lindent = 4; // lpart's indent
+get hostTitle => withWhoTitle(hopTitle);
+// right(stat)
+const _commonFmt = '%-4s';
+const Map<String,String> _notcommonFmt = {'s': '%-5s', ' ': '%s'};
+get statTitle => rpartFn({'l':'Loss', 's':'Sent', 'm':'Last', 'b':'Best', 'w':'Wrst', ' ': '', 'a':'Avrg', 'j':'Jttr'});
 
 // extra messaging
 const _unreachMesg = 'Destination is unreachable';
@@ -34,21 +35,35 @@ void addFail(String? m) { if ((m != null) && !fails.contains(m)) fails.add(m); }
 typedef KeyHint = ({String key, int b, String hint}); // 'b' is index of bold character
 final List<KeyHint> keyhints = [
   (key: 'count',   b: 0, hint: 'number of cycles to ping'),
+  (key: 'fields',  b: 0, hint: 'stat fields to display, chars stand for: $statKeysDesc'),
   (key: 'dns',     b: 0, hint: 'toggle hostname/ipaddr show (note: on linux it works only in non-numeric mode)'),
   (key: 'ival',    b: 0, hint: 'interval between pings in seconds'),
   (key: 'payload', b: 0, hint: 'payload pattern'),
   (key: 'qos',     b: 0, hint: 'set QoS bits'),
   (key: 'size',    b: 0, hint: 'payload size'),
   (key: 'ttl',     b: 0, hint: 'set TTL range in min,max format'),
-  (key: 'who',     b: 0, hint: "toggle whois info diaplying (note: press 'W' to set whois-fields in [acdr]+ format)"),
+  (key: 'who',     b: 0, hint: "toggle whois info diaplying (note: press 'W' to set whois-fields in [$whoPatt]+ format)"),
   (key: 'Reset',   b: 0, hint: 'reset stats'),
   (key: 'Pause',   b: 0, hint: 'pause/resume'),
-  (key: 'Quit',    b: 0, hint: 'stop and exit'),
+  (key: 'Quit',    b: 0, hint: "stop and exit, 'x' is aliased to 'Q'"),
   (key: 'Help',    b: 0, hint: 'this help'),
 ];
 final int maxHKey = keyhints.reduce((a, b) { return a.key.length > b.key.length ? a : b; }).key.length;
 
+//
 // rest: aux functions
+
+String rpartFn(Map<String, String> m) {
+  List<String> fmts = [], args = [];
+  for (var c in statKeysList) {
+    var mc = m[c];
+    if (mc == null) continue;
+    fmts.add(_notcommonFmt[c] ?? _commonFmt);
+    args.add(mc);
+  }
+  return sprintf(fmts.join(' '), args);
+}
+
 (String?, String?) parseCycles(String s) {
   try {
     int c = int.parse(s);
@@ -56,6 +71,18 @@ final int maxHKey = keyhints.reduce((a, b) { return a.key.length > b.key.length 
     if (c != count) { count = c; paramsChanged = true; }
   } catch (e) { return ('Cycles: $e', null); }
   return (null, '$count');
+}
+
+final RegExp _statkeys = RegExp(r'^[' + statKeysDef + r']+$');
+(String?, String?) parseStatKeys(String s) {
+  try {
+    if (!_statkeys.hasMatch(s)) return ("stat fields '$s' must match '[$statKeysDef]+' pattern", null);
+    if (s != statKeys) {
+      statKeys = String.fromCharCodes(s.codeUnits.toSet().toList());
+      statKeysList = statKeys.split('');
+      paramsChanged = true; }
+  } catch (e) { return ('stat fields: $e', null); }
+  return (null, statKeys);
 }
 
 (String?, String?) parseIval(String s) {
@@ -114,15 +141,19 @@ final RegExp _hex = RegExp(r'^([\da-fA-F]{1,32})$');
   return (null, '$firstTTL..$lastTTL');
 }
 
-final RegExp _riskeys = RegExp(r'^([acdr]+)$');
+final RegExp _riskeys = RegExp(r'^[' + whoPatt + r']+$');
 (String?, String?) parseWhoKeys(String s) {
   try {
     // special case1 '' : unset
     if (s == '')  { if (whoKeys != null) { whoKeys = null; paramsChanged = true; }}
     else {
       if (s == '-') s = whoKeysDef; // special case2 '-': set default
-      if (!_riskeys.hasMatch(s)) return ("whois keys ($s) must match '[acdr]+' pattern", null);
-      if (s != whoKeys) { whoKeys = String.fromCharCodes(s.codeUnits.toSet().toList()); paramsChanged = true; }
+      if (!_riskeys.hasMatch(s)) return ("whois keys '$s' must match '[$whoPatt]+' pattern", null);
+      if (s != whoKeys) {
+        whoKeys = String.fromCharCodes(s.codeUnits.toSet().toList());
+        whoKeysList = whoKeys?.split('') ?? [];
+        paramsChanged = true;
+      }
     }
   } catch (e) { return ('whois keys: $e', null); }
   return (null, whoKeys);

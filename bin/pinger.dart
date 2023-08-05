@@ -216,6 +216,9 @@ void _keyActions(String host) {
   if (_keyProcessing) return;
   switch (getKey()) {
     case 'c': _resetPings(host, 'count', keyCycles, () => 'cycles: $count');
+    case 'f': keyFields();
+      if (paramsChanged) { paramsChanged = false; _postclearNote = true; }
+      logger?.p("action 'fields': statKeys=$statKeys");
     case 'd': if (!numeric) dnsEnable = !dnsEnable;
       logger?.p("action 'dns': dnsEnable=$dnsEnable");
     case 'i': _resetPings(host, 'interval', keyIval, () => 'interval: $interval');
@@ -231,11 +234,13 @@ void _keyActions(String host) {
         _savedWhoKeys = whoKeys; whoKeys = null;
         _whoisTimer?.cancel(); _whoisTimer = null;
       }
+      logger?.p("action 'whois': whoKeys=$whoKeys");
     case 'W':
       _resetPings(host, 'whois', keyWhois, () => 'whois keys: "$whoKeys"', fnOnChange: () {
         _whoisTimer?.cancel();
         _whoisTimer = (whoKeys == null) ? null : Timer.periodic(Duration(seconds: 2 * risTimeout), (_) => _whoisUpdate());
       });
+      logger?.p("action 'Whois': whoKeys=$whoKeys");
     case 'h':
     case 'H': keyHelp(); showStat(host, stat, _hops);
       logger?.p("action 'help'");
