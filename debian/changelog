@@ -1,3 +1,9 @@
+dmtr (49) lunar mantic; urgency=low
+
+  * constrain keyaction line to "hints exit" if there's not enough space
+
+ -- yvs <VSYakovetsky@gmail.com>  Wed, 09 Aug 2023 12:25:11 +0300
+
 dmtr (48) lunar mantic; urgency=low
 
   * deb+snap packaging related

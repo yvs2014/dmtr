@@ -9,6 +9,7 @@ import 'aux.dart';
 
 const _kEnter = 10;
 const _kBackspace = 127;
+const _hkPretext = 'Keys:';
 
 late Voidptr _win;
 
@@ -34,8 +35,8 @@ String? getKey() {
 void keyHelp() {
   pause = true;
   clear();
-  int ind = 2, y = 2, x0 = 1, x = x0 + ind + maxHKey + 2;
-  mvaddstr(y++, x0, 'Keys:');
+  int ind = 2, y = 2, x0 = 1, x = x0 + ind + hkMaxLen + 2;
+  mvaddstr(y++, x0, _hkPretext);
   for (var h in keyhints) {
     move(y, x0 + ind);
     if (h.b > 0) addstr(h.key.substring(0, h.b));
@@ -125,16 +126,23 @@ int printTitle(int y0, int w, {bool over = false, bool up = false}) {
   if (up) { refresh(); }
   else {
     { // print 'Keys Datetime' line
-      mvaddstr(y, 1, 'Keys:');
-      for (var h in keyhints) {
-        addstr(' ');
-        if (h.b > 0) addstr(h.key.substring(0, h.b));
-        attron(aBold); addstr(h.key[h.b]); attroff(aBold);
-        if (h.key.length > h.b) addstr(h.key.substring(h.b + 1));
-      }
+      int x0 = 1;
+      mvaddstr(y, x0, _hkPretext);
       String now = '${DateTime.now()}';
       now = now.substring(0, now.indexOf('.'));
-      mvaddstr(y++, cols - (now.length + 1), now);
+      int xnow = cols - (now.length + 1);
+      if (hkTotal < (xnow - (_hkPretext.length + x0 + 2))) {
+        for (var h in keyhints) {
+          addstr(' ');
+          if (h.b > 0) addstr(h.key.substring(0, h.b));
+          attron(aBold); addstr(h.key[h.b]); attroff(aBold);
+          if (h.key.length > h.b) addstr(h.key.substring(h.b + 1));
+        }
+      } else {
+        addstr(' '); attron(aBold); addstr('h'); attroff(aBold); addstr('ints');
+        addstr(' e'); attron(aBold); addstr('x'); attroff(aBold); addstr('it');
+      }
+      mvaddstr(y++, xnow, now);
     }
     if (!over) { // print 'Host Stat' title
       y++;

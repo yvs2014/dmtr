@@ -48,7 +48,8 @@ final List<KeyHint> keyhints = [
   (key: 'Quit',    b: 0, hint: "stop and exit, 'x' is aliased to 'Q'"),
   (key: 'Help',    b: 0, hint: 'this help'),
 ];
-final int maxHKey = keyhints.reduce((a, b) { return a.key.length > b.key.length ? a : b; }).key.length;
+final int hkMaxLen = keyhints.reduce((a, b) => ((a.key.length > b.key.length) ? a : b)).key.length;
+final int hkTotal = keyhints.reduce((a, b) => (key: '${a.key} ${b.key}', b:0, hint:'')).key.length;
 
 //
 // rest: aux functions

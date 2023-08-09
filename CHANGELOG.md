@@ -1,3 +1,6 @@
+## 0.1.49
+- constrain keyaction line to "hints exit" if there's not enough space
+
 ## 0.1.48
 - deb+snap packaging related
 
