@@ -1,3 +1,6 @@
+## 0.1.52
+- add head of manual page to github-readme and a runtime screenshot
+
 ## 0.1.51
 - add widechar support into dcurses to display wchared hostnames in title (display mode)
 
