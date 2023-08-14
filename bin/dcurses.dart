@@ -14,7 +14,7 @@ const _hkPretext = 'Keys:';
 late Voidptr _win;
 
 bool openDisplay() {
-  _win = initscr();
+  _win = initscr(/*wide: true*/);
   bool rc = (_win != nilptr);
   if (rc) {
     cursset(0); // hide cursor

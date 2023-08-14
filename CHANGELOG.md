@@ -1,3 +1,6 @@
+## 0.1.50
+- load libcurses only in display mode
+
 ## 0.1.49
 - constrain keyaction line to "hints exit" if there's not enough space
 

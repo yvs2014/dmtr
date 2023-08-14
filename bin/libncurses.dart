@@ -12,13 +12,17 @@ const cOK = 0;
 const cERR = -1;
 const cAttrShift = 8;
 const aBold = 1 << (13 + cAttrShift);
+const _libext = ['so.6', 'so'];
+const _dclib = (legacy: 'curses', std: 'ncurses', wide: 'ncursesw');
 
-DynamicLibrary _dynload(List<String> names, List<String> suffixes) {
+String? _currlib;
+DynamicLibrary _dynload(List<String> names) {
   if (!Platform.isLinux) throw Exception("Platform '${Platform.operatingSystem}' is not supported");
   List errs = [];
   for (var lib in names) {
-    for (var so in suffixes) {
-      try { return DynamicLibrary.open('$lib.$so'); }
+    _currlib = lib;
+    for (var so in _libext) {
+      try { return DynamicLibrary.open('lib$lib.$so'); }
       catch (e) { errs.add(e); }
     }
   }
@@ -26,10 +30,18 @@ DynamicLibrary _dynload(List<String> names, List<String> suffixes) {
   throw Exception("No one library can be loaded: ${names.join(', ')}");
 }
 
-final _libncurses = _dynload(['libncurses', 'libncursesw', 'libcurses'], ['so.6', 'so']);
+late final DynamicLibrary _libncurses;
+late final bool _widelib;
+get widelib => _widelib;
 
 // C functions' wrapping
-Voidptr initscr() => _initscr();
+Voidptr initscr({bool wide = false}) {
+  final List<String> names = wide ? [_dclib.wide, _dclib.std] : [_dclib.std, _dclib.wide];
+  _libncurses = _dynload(names + [_dclib.legacy]);
+  _widelib = wide && (_currlib == _dclib.wide);
+  return _initscr();
+}
+
 int endwin() => _endwin();
 void clear() => _clear();
 void refresh() => _refresh();
