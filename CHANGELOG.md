@@ -1,3 +1,6 @@
+## 0.1.51
+- add widechar support into dcurses to display wchared hostnames in title (display mode)
+
 ## 0.1.50
 - load libcurses only in display mode
 

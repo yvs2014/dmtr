@@ -1,3 +1,9 @@
+dmtr (51) lunar mantic; urgency=low
+
+  * add widechar support into dcurses to display wchared hostnames in title (display mode)
+
+ -- yvs <VSYakovetsky@gmail.com>  Mon, 14 Aug 2023 23:50:30 +0300
+
 dmtr (50) lunar mantic; urgency=low
 
   * load libcurses only in display mode

@@ -14,7 +14,7 @@ const _hkPretext = 'Keys:';
 late Voidptr _win;
 
 bool openDisplay() {
-  _win = initscr(/*wide: true*/);
+  _win = initscr(wide: true);
   bool rc = (_win != nilptr);
   if (rc) {
     cursset(0); // hide cursor
@@ -119,7 +119,7 @@ int printTitle(int y0, int w, {bool over = false, bool up = false}) {
     if (!gotdata) parts.add(': no data yet');
     if (over) { move(y, 0); clrtoeol(); }
     { var s = parts.where((p) => (p != null) && p.isNotEmpty).join(' ');
-      mvaddstr(y++, 0, sprintf('%*s', [(cols + s.length) ~/ 2, s])); }
+      mvaddwstr(y++, 0, sprintf('%*s', [(cols + s.length) ~/ 2, s])); }
   }
   if (over || up) { move(y, 0); clrtoeol(); }
 //  attroff(aBold);
