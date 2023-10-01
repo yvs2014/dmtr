@@ -1,6 +1,10 @@
 #!/usr/bin/make -f
 
-DEB_BUILD_OPTIONS=nostrip
+export DEB_BUILD_OPTIONS=nostrip
+
+GCC_ONLY=-flto=auto -ffat-lto-objects -fstack-clash-protection -ffat-lto-objects
+export DEB_CFLAGS_MAINT_STRIP=$(GCC_ONLY)
+export DEB_LDFLAGS_MAINT_STRIP=$(GCC_ONLY)
 
 %:
 	dh $@

@@ -1,13 +1,15 @@
 Source: dmtr
 Section: net
 Priority: optional
-Maintainer: mantainer <VSYakovetsky@gmail.com>
+Maintainer: yvs <VSYakovetsky@gmail.com>
 Rules-Requires-Root: no
-Build-Depends: dart
+# exclude dart from 'Build-depends' if there's dart installed with flutter.snap
+Build-Depends: dart, debhelper, dpkg-dev
 Standards-Version: 4.6.2
 Homepage: https://github.com/yvs2014/dmtr
 
 Package: dmtr
 Architecture: any
+Depends: ${shlibs:Depends}, iputils-ping
 Description: A system ping wrapper
  A network diagnostic tool based on parsing system ping output with functionality of traceroute and ncurses look of mtr

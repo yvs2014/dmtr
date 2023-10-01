@@ -3,7 +3,7 @@ import 'dart:io' show Platform;
 import 'syslogger.dart' show Syslogger;
 
 get myname { var exec = Platform.executable.split('/').last; return (exec == 'dart') ? 'dmtr' : exec; }
-final version = '0.1.52';
+final version = '0.1.53';
 String? optstr;
 String? addnote;
 bool pause = false;

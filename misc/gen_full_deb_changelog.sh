@@ -8,17 +8,18 @@ BACKUP=yes
 DISTS='lunar mantic'
 META='urgency=low'
 CHANGELOG='debian/changelog'
+BASE='0.1'
 
-[ -n "$BACKUP" ] && cp "$CHANGELOG" "/tmp/$(basename $CHANGELOG).bk"
+[ -n "$BACKUP" ] && [ -f "$CHANGELOG" ] && cp "$CHANGELOG" "/tmp/$(basename $CHANGELOG).bk"
 vers="$(git rev-list HEAD | sed -n '$=')"
-mnt() { echo "\n -- $auline  $dtline"; }
+mnt() { printf "\n -- $auline  $dtline\n\n"; }
 
 cat /dev/null >"$CHANGELOG"
 (git log --date=rfc ; echo commit) | while read w r; do
 	if [ "$w" = 'commit' ]; then
 		[ -n "$dtline" ] && mnt # complete prev record
 		[ -z "$r" ] && continue
-		echo "\n$NAME ($vers) $DISTS; $META"
+		echo "$NAME ($BASE.$vers) $DISTS; $META"
 		vers=$(($vers - 1))
 	elif [ "$w" = 'Author:' ]; then
 		auline="$r"
@@ -27,7 +28,7 @@ cat /dev/null >"$CHANGELOG"
 	elif [ -z "$w" ]; then
 		:
 	else
-		echo "\n  "'*'" $w $r"
+		printf "\n  "'*'" $w $r\n"
 	fi
 done >>"$CHANGELOG"
 [ -n "$dtline" ] && mnt >>"$CHANGELOG" # complete last record

@@ -1,70 +1,76 @@
-dmtr (52) lunar mantic; urgency=low
+dmtr (0.1.53) lunar mantic; urgency=low
+
+  * small cleanups and scripts' rearrangment, and added icon
+
+ -- yvs <VSYakovetsky@gmail.com>  Sun, 01 Oct 2023 22:49:18 +0300
+
+dmtr (0.1.52) lunar mantic; urgency=low
 
   * add head of manual page to github-readme and a runtime screenshot
 
- -- yvs <VSYakovetsky@gmail.com>  Tue, 15 Aug 2023 00:35:56 +0300
+ -- yvs <VSYakovetsky@gmail.com>  Tue, 15 Aug 2023 00:40:14 +0300
 
-dmtr (51) lunar mantic; urgency=low
+dmtr (0.1.51) lunar mantic; urgency=low
 
   * add widechar support into dcurses to display wchared hostnames in title (display mode)
 
- -- yvs <VSYakovetsky@gmail.com>  Mon, 14 Aug 2023 23:50:30 +0300
+ -- yvs <VSYakovetsky@gmail.com>  Mon, 14 Aug 2023 23:58:11 +0300
 
-dmtr (50) lunar mantic; urgency=low
+dmtr (0.1.50) lunar mantic; urgency=low
 
   * load libcurses only in display mode
 
- -- yvs <VSYakovetsky@gmail.com>  Mon, 14 Aug 2023 23:10:21 +0300
+ -- yvs <VSYakovetsky@gmail.com>  Mon, 14 Aug 2023 23:11:56 +0300
 
-dmtr (49) lunar mantic; urgency=low
+dmtr (0.1.49) lunar mantic; urgency=low
 
   * constrain keyaction line to "hints exit" if there's not enough space
 
- -- yvs <VSYakovetsky@gmail.com>  Wed, 09 Aug 2023 12:25:11 +0300
+ -- yvs <VSYakovetsky@gmail.com>  Wed, 9 Aug 2023 12:26:37 +0300
 
-dmtr (48) lunar mantic; urgency=low
+dmtr (0.1.48) lunar mantic; urgency=low
 
   * deb+snap packaging related
 
- -- yvs <VSYakovetsky@gmail.com>  Sun, 06 Aug 2023 01:54:27 +0300
+ -- yvs <VSYakovetsky@gmail.com>  Sun, 6 Aug 2023 01:56:45 +0300
 
-dmtr (47) lunar mantic; urgency=low
+dmtr (0.1.47) lunar mantic; urgency=low
 
   * add -f option (custom stat fields)
 
  -- yvs <VSYakovetsky@gmail.com>  Sat, 5 Aug 2023 23:06:19 +0300
 
-dmtr (46) lunar mantic; urgency=low
+dmtr (0.1.46) lunar mantic; urgency=low
 
   * add -w option (whois info: AS Country etc.)
 
  -- yvs <VSYakovetsky@gmail.com>  Thu, 3 Aug 2023 04:13:51 +0300
 
-dmtr (45) lunar mantic; urgency=low
+dmtr (0.1.45) lunar mantic; urgency=low
 
   * rm ppc64el from snap builds
 
  -- yvs <VSYakovetsky@gmail.com>  Tue, 1 Aug 2023 16:09:44 +0300
 
-dmtr (44) lunar mantic; urgency=low
+dmtr (0.1.44) lunar mantic; urgency=low
 
   * switch snap builds to flutter.dart and add arm64,ppc64el
 
  -- yvs <VSYakovetsky@gmail.com>  Tue, 1 Aug 2023 15:40:35 +0300
 
-dmtr (43) lunar mantic; urgency=low
+dmtr (0.1.43) lunar mantic; urgency=low
 
   * add snapcraft.yaml to build .snap package (successfully 'apt install dart' on amd64 only)
 
  -- yvs <VSYakovetsky@gmail.com>  Mon, 31 Jul 2023 23:55:22 +0300
 
-dmtr (42) lunar mantic; urgency=low
+dmtr (0.1.42) lunar mantic; urgency=low
 
   * add script for .deb package building
 
  -- yvs <VSYakovetsky@gmail.com>  Sun, 30 Jul 2023 22:41:33 +0300
 
-dmtr (41) lunar mantic; urgency=low
+dmtr (0.1.41) lunar mantic; urgency=low
 
   * add minimal manual page and Makefile
 
@@ -72,7 +78,7 @@ dmtr (41) lunar mantic; urgency=low
 
  -- yvs <VSYakovetsky@gmail.com>  Sun, 30 Jul 2023 20:07:58 +0300
 
-dmtr (40) lunar mantic; urgency=low
+dmtr (0.1.40) lunar mantic; urgency=low
 
   * add 'interval' runtime customization
 
@@ -82,7 +88,7 @@ dmtr (40) lunar mantic; urgency=low
 
  -- yvs <VSYakovetsky@gmail.com>  Sun, 30 Jul 2023 13:40:09 +0300
 
-dmtr (39) lunar mantic; urgency=low
+dmtr (0.1.39) lunar mantic; urgency=low
 
   * add -a option (address|interface for 'ping -I')
 
@@ -90,61 +96,61 @@ dmtr (39) lunar mantic; urgency=low
 
  -- yvs <VSYakovetsky@gmail.com>  Sun, 30 Jul 2023 12:57:32 +0300
 
-dmtr (38) lunar mantic; urgency=low
+dmtr (0.1.38) lunar mantic; urgency=low
 
   * add option string to json output
 
  -- yvs <VSYakovetsky@gmail.com>  Sun, 30 Jul 2023 01:11:48 +0300
 
-dmtr (37) lunar mantic; urgency=low
+dmtr (0.1.37) lunar mantic; urgency=low
 
   * add -p option (payload pattern)
 
  -- yvs <VSYakovetsky@gmail.com>  Sun, 30 Jul 2023 00:43:46 +0300
 
-dmtr (36) lunar mantic; urgency=low
+dmtr (0.1.36) lunar mantic; urgency=low
 
   * add 'count/cycles' runtime customization
 
  -- yvs <VSYakovetsky@gmail.com>  Sat, 29 Jul 2023 23:48:40 +0300
 
-dmtr (35) lunar mantic; urgency=low
+dmtr (0.1.35) lunar mantic; urgency=low
 
   * do not restart pings unless params have been changed (runtime customization)
 
  -- yvs <VSYakovetsky@gmail.com>  Sat, 29 Jul 2023 22:25:29 +0300
 
-dmtr (34) lunar mantic; urgency=low
+dmtr (0.1.34) lunar mantic; urgency=low
 
   * indicate runtime TTL customization
 
  -- yvs <VSYakovetsky@gmail.com>  Sat, 29 Jul 2023 04:29:19 +0300
 
-dmtr (33) lunar mantic; urgency=low
+dmtr (0.1.33) lunar mantic; urgency=low
 
   * add -Q option (QoS/ToS bits)
 
  -- yvs <VSYakovetsky@gmail.com>  Sat, 29 Jul 2023 04:15:06 +0300
 
-dmtr (32) lunar mantic; urgency=low
+dmtr (0.1.32) lunar mantic; urgency=low
 
   * add extra messaging if there's wrong data in replies
 
  -- yvs <VSYakovetsky@gmail.com>  Sat, 29 Jul 2023 01:57:01 +0300
 
-dmtr (31) lunar mantic; urgency=low
+dmtr (0.1.31) lunar mantic; urgency=low
 
   * add payload size customization at runtime
 
  -- yvs <VSYakovetsky@gmail.com>  Fri, 28 Jul 2023 12:20:02 +0300
 
-dmtr (30) lunar mantic; urgency=low
+dmtr (0.1.30) lunar mantic; urgency=low
 
   * add -s option (payload size)
 
  -- yvs <VSYakovetsky@gmail.com>  Thu, 27 Jul 2023 16:58:32 +0300
 
-dmtr (29) lunar mantic; urgency=low
+dmtr (0.1.29) lunar mantic; urgency=low
 
   * rearrange waitlist filling
 
@@ -152,7 +158,7 @@ dmtr (29) lunar mantic; urgency=low
 
  -- yvs <VSYakovetsky@gmail.com>  Wed, 26 Jul 2023 17:11:36 +0300
 
-dmtr (28) lunar mantic; urgency=low
+dmtr (0.1.28) lunar mantic; urgency=low
 
   * add error indication at exit
 
@@ -162,79 +168,79 @@ dmtr (28) lunar mantic; urgency=low
 
  -- yvs <VSYakovetsky@gmail.com>  Sat, 22 Jul 2023 16:15:15 +0300
 
-dmtr (27) lunar mantic; urgency=low
+dmtr (0.1.27) lunar mantic; urgency=low
 
   * shell version-n-changelog generator
 
  -- yvs <VSYakovetsky@gmail.com>  Fri, 21 Jul 2023 19:52:15 +0300
 
-dmtr (26) lunar mantic; urgency=low
+dmtr (0.1.26) lunar mantic; urgency=low
 
   * better indication if something is firewalled
 
  -- yvs <VSYakovetsky@gmail.com>  Fri, 21 Jul 2023 16:23:21 +0300
 
-dmtr (25) lunar mantic; urgency=low
+dmtr (0.1.25) lunar mantic; urgency=low
 
   * keyaction timer not dependent on ping timeout
 
  -- yvs <VSYakovetsky@gmail.com>  Fri, 21 Jul 2023 14:36:07 +0300
 
-dmtr (24) lunar mantic; urgency=low
+dmtr (0.1.24) lunar mantic; urgency=low
 
   * customize TTL range at runtime
 
  -- yvs <VSYakovetsky@gmail.com>  Fri, 21 Jul 2023 06:02:18 +0300
 
-dmtr (23) lunar mantic; urgency=low
+dmtr (0.1.23) lunar mantic; urgency=low
 
   * put off macos support until 'Request timeout' timestamping could be found
 
  -- yvs <VSYakovetsky@gmail.com>  Tue, 18 Jul 2023 14:54:19 +0300
 
-dmtr (22) lunar mantic; urgency=low
+dmtr (0.1.22) lunar mantic; urgency=low
 
   * add macos timestamp (debug mode)
 
  -- yvs <VSYakovetsky@gmail.com>  Mon, 17 Jul 2023 03:03:46 +0300
 
-dmtr (21) lunar mantic; urgency=low
+dmtr (0.1.21) lunar mantic; urgency=low
 
   * workflow testrun
 
  -- yvs <VSYakovetsky@gmail.com>  Sun, 16 Jul 2023 22:51:59 +0300
 
-dmtr (20) lunar mantic; urgency=low
+dmtr (0.1.20) lunar mantic; urgency=low
 
   * add '-t' option (min,max TTL setting)
 
  -- yvs <VSYakovetsky@gmail.com>  Sun, 16 Jul 2023 11:59:25 +0300
 
-dmtr (19) lunar mantic; urgency=low
+dmtr (0.1.19) lunar mantic; urgency=low
 
   * add small internal ping wrapper (with timestamps, status, probes, additional error-printing)
 
  -- yvs <VSYakovetsky@gmail.com>  Sun, 16 Jul 2023 04:18:37 +0300
 
-dmtr (18) lunar mantic; urgency=low
+dmtr (0.1.18) lunar mantic; urgency=low
 
   * try to load curses library in different ways
 
  -- yvs <VSYakovetsky@gmail.com>  Fri, 14 Jul 2023 08:47:14 +0300
 
-dmtr (17) lunar mantic; urgency=low
+dmtr (0.1.17) lunar mantic; urgency=low
 
   * add output in JSON format (-j)
 
  -- yvs <VSYakovetsky@gmail.com>  Thu, 13 Jul 2023 12:32:41 +0300
 
-dmtr (16) lunar mantic; urgency=low
+dmtr (0.1.16) lunar mantic; urgency=low
 
   * add basic interactive key-actions
 
  -- yvs <VSYakovetsky@gmail.com>  Thu, 13 Jul 2023 10:17:41 +0300
 
-dmtr (15) lunar mantic; urgency=low
+dmtr (0.1.15) lunar mantic; urgency=low
 
   * add output header
 
@@ -242,31 +248,31 @@ dmtr (15) lunar mantic; urgency=low
 
  -- yvs <VSYakovetsky@gmail.com>  Wed, 12 Jul 2023 11:12:57 +0300
 
-dmtr (14) lunar mantic; urgency=low
+dmtr (0.1.14) lunar mantic; urgency=low
 
   * hop addrname as a list
 
  -- yvs <VSYakovetsky@gmail.com>  Wed, 12 Jul 2023 00:43:01 +0300
 
-dmtr (13) lunar mantic; urgency=low
+dmtr (0.1.13) lunar mantic; urgency=low
 
   * less dependencies' constrains
 
  -- yvs <VSYakovetsky@gmail.com>  Mon, 10 Jul 2023 14:05:28 +0300
 
-dmtr (12) lunar mantic; urgency=low
+dmtr (0.1.12) lunar mantic; urgency=low
 
   * align a bit output data
 
  -- yvs <VSYakovetsky@gmail.com>  Mon, 10 Jul 2023 13:03:26 +0300
 
-dmtr (11) lunar mantic; urgency=low
+dmtr (0.1.11) lunar mantic; urgency=low
 
   * add minimal libncurses wrapper
 
  -- yvs <VSYakovetsky@gmail.com>  Mon, 10 Jul 2023 04:46:44 +0300
 
-dmtr (10) lunar mantic; urgency=low
+dmtr (0.1.10) lunar mantic; urgency=low
 
   * add std statdata
 
@@ -274,56 +280,57 @@ dmtr (10) lunar mantic; urgency=low
 
  -- yvs <VSYakovetsky@gmail.com>  Sun, 9 Jul 2023 09:34:17 +0300
 
-dmtr (9) lunar mantic; urgency=low
+dmtr (0.1.9) lunar mantic; urgency=low
 
   * add basic ncurses mode
 
  -- yvs <VSYakovetsky@gmail.com>  Sat, 8 Jul 2023 10:15:22 +0300
 
-dmtr (8) lunar mantic; urgency=low
+dmtr (0.1.8) lunar mantic; urgency=low
 
   * use ping wrapper from a fork to not mixup with ping-wrapper from pubdev
 
  -- yvs <VSYakovetsky@gmail.com>  Fri, 7 Jul 2023 05:49:29 +0300
 
-dmtr (7) lunar mantic; urgency=low
+dmtr (0.1.7) lunar mantic; urgency=low
 
   * hop-data as an immutable record in order to keep its elements synced
 
  -- yvs <VSYakovetsky@gmail.com>  Fri, 7 Jul 2023 04:26:17 +0300
 
-dmtr (6) lunar mantic; urgency=low
+dmtr (0.1.6) lunar mantic; urgency=low
 
   * reorganize by files a bit
 
  -- yvs <VSYakovetsky@gmail.com>  Thu, 6 Jul 2023 03:02:26 +0300
 
-dmtr (5) lunar mantic; urgency=low
+dmtr (0.1.5) lunar mantic; urgency=low
 
   * support basic CLI arguments
 
  -- yvs <VSYakovetsky@gmail.com>  Wed, 5 Jul 2023 02:09:03 +0300
 
-dmtr (4) lunar mantic; urgency=low
+dmtr (0.1.4) lunar mantic; urgency=low
 
   * up to a simple report
 
  -- yvs <VSYakovetsky@gmail.com>  Tue, 4 Jul 2023 02:10:44 +0300
 
-dmtr (3) lunar mantic; urgency=low
+dmtr (0.1.3) lunar mantic; urgency=low
 
   * create Ping object per hop
 
  -- yvs <VSYakovetsky@gmail.com>  Mon, 3 Jul 2023 03:39:27 +0300
 
-dmtr (2) lunar mantic; urgency=low
+dmtr (0.1.2) lunar mantic; urgency=low
 
   * initial probe
 
  -- yvs <VSYakovetsky@gmail.com>  Sat, 1 Jul 2023 05:29:03 +0300
 
-dmtr (1) lunar mantic; urgency=low
+dmtr (0.1.1) lunar mantic; urgency=low
 
   * Initial commit
 
  -- yvs2014 <yvs2014@users.noreply.github.com>  Sat, 1 Jul 2023 05:16:11 +0300
+

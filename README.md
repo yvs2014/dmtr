@@ -12,7 +12,7 @@ DESCRIPTION
 -----------
 
 A network diagnostic tool based on parsing system **ping** output with functionality of traceroute and ncurses look of **mtr**.
-It doesn't require a set-root-uid or raw-socket-perms to run.
+No need set-root-uid or raw-socket-perms itself to run due to being a wrapper.
 
 DETAILS
 -------

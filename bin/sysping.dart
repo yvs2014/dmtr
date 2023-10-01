@@ -81,7 +81,7 @@ class Ping {
   Future<void> _onListen() async {
     _process = await Process.start(_sysping, _args, environment: _utfenv);
     _sub = StreamGroup.merge([_process.stderr, _process.stdout])
-      .transform(Utf8Decoder()).transform(LineSplitter()).transform<Data>(_transformer)
+      .transform(const Utf8Decoder()).transform(const LineSplitter()).transform<Data>(_transformer)
       .listen((ev) => _cntr.add(ev), onDone: _done);
   }
 

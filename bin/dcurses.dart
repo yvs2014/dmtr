@@ -47,7 +47,7 @@ void keyHelp() {
   y++;
   mvaddstr(y++, x0, 'Press any key to continue ...');
   refresh();
-  while (getch() < 0) { sleep(Duration(milliseconds: 200)); }
+  while (getch() < 0) { sleep(const Duration(milliseconds: 200)); }
   pause = false;
 }
 
@@ -74,7 +74,7 @@ void _getInput(String what, _InputFn fn) {
       input.add(c);
       if (input.length > (cols - prompt.length - 2 * x)) break; // too many
     }
-    sleep(Duration(milliseconds: 50));
+    sleep(const Duration(milliseconds: 50));
   }
   noecho();
   if (input.isNotEmpty) {
@@ -84,7 +84,7 @@ void _getInput(String what, _InputFn fn) {
       mvaddstr(y + 2, x, 'ERROR: $e');
       refresh();
       logger?.p('input error: $e');
-      sleep(Duration(seconds: 3));
+      sleep(const Duration(seconds: 3));
     }
   }
   pause = false;

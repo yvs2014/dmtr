@@ -1,3 +1,6 @@
+## 0.1.53
+- small cleanups and scripts' rearrangment, and added icon
+
 ## 0.1.52
 - add head of manual page to github-readme and a runtime screenshot
 

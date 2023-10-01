@@ -229,7 +229,7 @@ void _keyActions(String host) {
     case 'w':
       if (whoKeys == null) {
         whoKeys = _savedWhoKeys ?? whoKeysDef;
-        _whoisTimer = Timer.periodic(Duration(seconds: 2 * risTimeout), (_) => _whoisUpdate());
+        _whoisTimer = Timer.periodic(const Duration(seconds: 2 * risTimeout), (_) => _whoisUpdate());
       } else {
         _savedWhoKeys = whoKeys; whoKeys = null;
         _whoisTimer?.cancel(); _whoisTimer = null;
@@ -238,7 +238,7 @@ void _keyActions(String host) {
     case 'W':
       _resetPings(host, 'whois', keyWhois, () => 'whois keys: "$whoKeys"', fnOnChange: () {
         _whoisTimer?.cancel();
-        _whoisTimer = (whoKeys == null) ? null : Timer.periodic(Duration(seconds: 2 * risTimeout), (_) => _whoisUpdate());
+        _whoisTimer = (whoKeys == null) ? null : Timer.periodic(const Duration(seconds: 2 * risTimeout), (_) => _whoisUpdate());
       });
       logger?.p("action 'Whois': whoKeys=$whoKeys");
     case 'h':
@@ -288,16 +288,16 @@ Future<void> pingHops(String host) async {
   _clearPings();
   Timer? pingTimer, kbdTimer;
   if (displayMode) {
-    pingTimer = Timer.periodic(Duration(seconds: 1), (_) => showStat(host, stat, _hops));
-    kbdTimer = Timer.periodic(Duration(milliseconds: 100), (_) => _keyActions(host));
+    pingTimer = Timer.periodic(const Duration(seconds: 1), (_) => showStat(host, stat, _hops));
+    kbdTimer = Timer.periodic(const Duration(milliseconds: 100), (_) => _keyActions(host));
   }
-  if (whoKeys != null) _whoisTimer = Timer.periodic(Duration(seconds: 2 * risTimeout), (_) => _whoisUpdate());
+  if (whoKeys != null) _whoisTimer = Timer.periodic(const Duration(seconds: 2 * risTimeout), (_) => _whoisUpdate());
   await _futuresInRange(host, firstTTL, lastTTL);
   logger?.p("ping '$host' is started (interval=${interval}sec cycles=${count ?? 'nolimit'})");
   while (_futures.whereNotNull().isNotEmpty) {
     logger?.p('waitlist of ${_futures.whereNotNull().length} pings');
     await Future.wait(_futures.whereNotNull());
-    while (_futureslocked) { sleep(Duration(milliseconds: 1)); }
+    while (_futureslocked) { sleep(const Duration(milliseconds: 1)); }
   }
   logger?.p("ping '$host' is finished");
   _whoisTimer?.cancel();
@@ -306,7 +306,7 @@ Future<void> pingHops(String host) async {
     pingTimer?.cancel();
     kbdTimer?.cancel();
     showStat(host, stat, _hops);
-    sleep(Duration(milliseconds: 500)); // 0.5sec enough to spot last updates
+    sleep(const Duration(milliseconds: 500)); // 0.5sec enough to spot last updates
   }
 }
 

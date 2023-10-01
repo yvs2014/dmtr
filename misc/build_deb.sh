@@ -7,7 +7,6 @@ chk_cmd() {
   exit 1
 }
 chk_cmd dpkg-buildpackage dpkg-dev
-chk_cmd dch devscripts
 chk_cmd dh debhelper
 
 set -e
@@ -15,7 +14,6 @@ basever='0.1'
 command -v git >/dev/null && rev="$(git rev-list HEAD | sed -n '$=')" || rev=
 [ -n "$rev" ] && vers="$basever.$rev" || vers="$basever"
 arch="$(dpkg-architecture -qDEB_BUILD_ARCH)"
-dist="$(lsb_release -cs)"
 name="dmtr"
 ddir="debs"
 nra="$ddir/${name}_${vers}_$arch"
