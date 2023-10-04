@@ -1,6 +1,6 @@
 [Desktop Entry]
 Name=dmtr
-Comment=System ping wrapper for network diagnostic (ncurses version)
+Comment=System ping wrapper for network diagnostic (CLI version)
 Exec=dmtr
 Icon=${SNAP}/meta/gui/dmtr.png
 Terminal=false

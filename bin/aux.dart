@@ -18,18 +18,36 @@ get statTitle => rpartFn({'l':'Loss', 's':'Sent', 'm':'Last', 'b':'Best', 'w':'W
 
 // extra messaging
 const _unreachMesg = 'Destination is unreachable';
-get unreachMesg => sprintf('%*s%s', [lindent, '', _unreachMesg]);
+final unreachMesg = sprintf('%*s%s', [lindent, '', _unreachMesg]);
 const _wrongMesg = 'Got wrong data: ';
 String wrongMesg(String cause) => sprintf('%*s%s%s', [lindent, '', _wrongMesg, cause]);
+const nodataMesg = 'no data';
 
 // pretty print
 const _floatUpto = 10;
 const _twoDigitsUpto = 0.1;
 String prfmt(double v) => sprintf('%.*f', [((v > 0) && (v < _floatUpto)) ? ((v < _twoDigitsUpto) ? 2 : 1) : 0, v]);
 
-// messages if something went wrong (for example 'unknown host')
-List<String?> fails = [];
-void addFail(String? m) { if ((m != null) && !fails.contains(m)) fails.add(m); }
+// aggregate unique error messages per hop
+final fails = Fails(maxTTL);
+class Fails {
+  final int max;
+  late final List<List<String>> errs;
+  Fails(int len, {this.max = 10}) { errs = List<List<String>>.filled(len, []); }
+  void add(int ndx, String? mesg) {
+    if ((ndx >= errs.length) || (mesg == null)) return;
+    if (!errs[ndx].contains(mesg)) errs[ndx].add(mesg);
+    if (errs[ndx].length > max) errs[ndx].removeAt(0); // no more 'max' errors per hop
+  }
+  void clear(int ndx) { if ((ndx < errs.length) && errs[ndx].isNotEmpty) errs[ndx] = []; }
+  void clearAll() { for (int i = 0; i < errs.length; i++) { errs[i] = []; }}
+  bool get isNotEmpty { for (var l in errs) { if (l.isNotEmpty) return true; } return false; }
+  List<String> getUnique(int first) {
+    Set<String> u = {}; int min = (first < errs.length) ? first : errs.length;
+    for (int i = 0; i < min; i++) { u.addAll(errs[i]); }
+    return u.toList();
+  }
+}
 
 // key hints in ncurses' mode
 typedef KeyHint = ({String key, int b, String hint}); // 'b' is index of bold character

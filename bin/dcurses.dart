@@ -116,7 +116,7 @@ int printTitle(int y0, int w, {bool over = false, bool up = false}) {
     if (whoKeys != whoopt) subs.add("whois '$whoKeys'");
     if (subs.isNotEmpty) { var s = subs.where((p) => (p != null) && p.isNotEmpty).join(', '); parts.add('($s)'); }
     if (addnote != null) parts.add(addnote);
-    if (!gotdata) parts.add(': no data yet');
+    if (!gotdata && running) parts.add(': $nodataMesg yet');
     if (over) { move(y, 0); clrtoeol(); }
     { var s = parts.where((p) => (p != null) && p.isNotEmpty).join(' ');
       mvaddwstr(y++, 0, sprintf('%*s', [(cols + s.length) ~/ 2, s])); }
@@ -170,7 +170,7 @@ void showStat(String host, List<Hop> stat, int hops) {
         for (int j = 1; j < stat[i].info.length; j++) {
           mvaddstr(y++, 0, sprintf('%*s%s', [lindent, '', stat[i].lpart(j)]));
         }
-        if (stat[i].unreach) mvaddstr(y++, 0, unreachMesg);
+        if (!stat[i].reachable) mvaddstr(y++, 0, unreachMesg);
         var mesg = stat[i].wrong;
         if (mesg != null) mvaddstr(y++, 0, wrongMesg(mesg));
       }

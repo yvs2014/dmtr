@@ -6,7 +6,7 @@ import 'common.dart';
 import 'params.dart';
 import 'dcurses.dart';
 import 'sysping.dart' show Ping, Data, Status;
-import 'aux.dart' show addFail;
+import 'aux.dart' show fails;
 import 'riswhois.dart';
 
 late int _hops;
@@ -23,21 +23,15 @@ void _clearPings() {
   maxHostaddr = maxHostname = 0;
 }
 
-void _resetStats() {
-  for (int i = 0; i < maxTTL; i++) {
-    stat[i].data = (sent: 0, rcvd: 0, last: 0, best: 0, wrst: 0, avg: 0, jttr: 0);
-  }
+void _resetData() {
+  for (int i = 0; i < maxTTL; i++) { stat[i].clearData(); }
   _hops = maxTTL;
   maxHostaddr = maxHostname = 0;
 }
 
 Future<void> _stopPingAt(int at, String reason) async {
-  var p = stat[at].ping;
-  if (p != null) {
-    logger?.p('stop ping[${at + 1}], reason: $reason');
-    await p.stop();
-  }
-  cleanNonStat(stat[at]);
+  if (stat[at].ping != null) logger?.p('stop ping[${at + 1}], reason: $reason');
+  await stat[at].stop();
   _futures[at] = null;
 }
 
@@ -52,16 +46,16 @@ TsUsec? _parseTS(String s) {
   return null;
 }
 
-void _addAddrNameAt(int ndx, String addr, String? name) {
-  final an = stat[ndx].info.indexWhere((i) => ((i.addr != null) ? (i.addr == addr) : false));
-  if (an < 0) { // new addr
-    if (stat[ndx].info.length >= maxNamesPerHop) stat[ndx].info.removeAt(0);
-    stat[ndx].info.add((addr: addr, name: name, whois: null));
+void _insertAddr(int ndx, String addr, String? name) {
+  final at = stat[ndx].info.indexWhere((i) => ((i.addr != null) ? (i.addr == addr) : false));
+  if (at < 0) { // new addr
+    stat[ndx].info.insert(0, (addr: addr, name: name, whois: null));
+    if (stat[ndx].info.length > maxNamesPerHop) stat[ndx].info.removeLast();
     if (addr.length > maxHostaddr) maxHostaddr = addr.length;
     if (maxHostaddr > maxHostname) maxHostname = maxHostaddr;
     if ((name != null) && (name.length > maxHostname)) maxHostname = name.length;
-  } else if ((stat[ndx].info[an].name == null) && (name != null)) { // if name is not set before
-    stat[ndx].info[an] = (addr: stat[ndx].info[an].addr, name: name, whois: stat[ndx].info[an].whois);
+  } else if ((stat[ndx].info[at].name == null) && (name != null)) { // if name is not set before
+    stat[ndx].info[at] = (addr: stat[ndx].info[at].addr, name: name, whois: stat[ndx].info[at].whois);
     if (name.length > maxHostname) maxHostname = name.length;
   }
   if (whoKeys != null) _whoisUpdate();
@@ -69,13 +63,13 @@ void _addAddrNameAt(int ndx, String addr, String? name) {
 
 void _saveAddrName(int ndx, Data data) {
   if (!gotdata) gotdata = true;
-  if (data.addr != null) _addAddrNameAt(ndx, data.addr!, data.name);
+  if (data.addr != null) _insertAddr(ndx, data.addr!, data.name);
   if (data.seq != null) stat[ndx].seq = data.seq!; // marker of stats
 }
 
-void _setHopData(int ndx, Data data) {
+void _setHopData(int ndx, Data data, bool reachable) {
   _saveAddrName(ndx, data);
-  if (stat[ndx].unreach) stat[ndx].unreach = false;
+  if (stat[ndx].reachable != reachable) stat[ndx].reachable = reachable;
   int? last;
   if (data.time != null) {
     last = data.time?.inMicroseconds;
@@ -114,13 +108,23 @@ HopData _incHopDataSentRcv(int ndx) => (sent: stat[ndx].data.sent + 1, rcvd: sta
   last: stat[ndx].data.last, best: stat[ndx].data.best, wrst: stat[ndx].data.wrst,
   avg: stat[ndx].data.avg, jttr: stat[ndx].data.jttr);
 
-int _ndxFirstUnreach(int ndx) {
-  for (int i = ndx; i > 0; i--) { if (!stat[i - 1].unreach) return i; }
+int _ndxFirstUnreach(int ndx, String? addr) {
+  for (int i = ndx; i > 0; i--) {
+    int at = i - 1;
+    if (stat[at].reachable) return i;
+    if (stat[at].info.isNotEmpty && (stat[at].info[0].addr != addr)) return i;
+  }
   return 0;
 }
+
 int _ndxFirstWrong(int ndx, String cause) {
   for (int i = ndx; i > 0; i--) { if (stat[i - 1].wrong != cause) return i; }
   return 0;
+}
+
+void _rewindBack(int first, int last) {
+  _hops = first + 1; // then clear data responded by unreachable hops except origin
+  for (int i = last; i > _hops; i--) { stat[i - 1].clearData(); }
 }
 
 Future<void> _readData(int ttl, Stream<Data> stream) async {
@@ -132,24 +136,25 @@ Future<void> _readData(int ttl, Stream<Data> stream) async {
         _hops = ttl; // stop pings at this ttl
         for (int i = _hops; i < maxTTL; i++) { _stopPingAt(i, 'success at ttl=$ttl'); }
       }
-      _setHopData(ndx, data);
+      _setHopData(ndx, data, true);
+      fails.clear(ndx);
     case Status.discard:
-      _setHopData(ndx, data);
-      if (data.mesg?.contains('nreachable') ?? false) { // rewind back to last 'unreach'
-        stat[ndx].unreach = true;
-        int lastndx = (lastTTL < _hops) ? lastTTL : _hops;
-        if ((lastndx == ttl) && (lastndx > 0)) _hops = _ndxFirstUnreach(ndx) + 1;
-      }
+      bool reachable = !(data.mesg?.contains('nreachable') ?? false);
+      if (ttl <= _hops) _setHopData(ndx, data, reachable);
+      if (reachable) { if (_hops < ttl) _hops = ttl; }
+      else           { if (_hops > ttl) _rewindBack(_ndxFirstUnreach(ndx, data.addr), _hops); }
+      fails.clear(ndx);
     case Status.timeout:
       if (stat[ndx].seq != data.seq) stat[ndx].data = _incHopDataSent(ndx);
       stat[ndx].seq = 0;
       var ts = data.ts;
       stat[ndx].ts = (ts != null) ? _parseTS(ts) : null; // keep timestamp for possible future discards
+      fails.clear(ndx);
     case Status.unknown: // unknown host
       _stopPingAt(ndx, 'got unknown at=$ndx');
-      addFail(data.mesg);
+      fails.add(ndx, data.mesg);
     case Status.error: // collect errors
-      addFail(data.mesg);
+      fails.add(ndx, data.mesg);
     case Status.wrong: // an answer, but neither success nor discard
       _saveAddrName(ndx, data);
       if (data.seq != null) stat[ndx].data = _incHopDataSentRcv(ndx);
@@ -250,7 +255,7 @@ void _keyActions(String host) {
     case 'R':
       logger?.p("action 'reset'");
       addnote = ': resetting...'; _postclearNote = true;
-      _resetStats();
+      _resetData();
     case 'x':
     case 'Q':
       logger?.p("action 'quit'");
@@ -294,11 +299,13 @@ Future<void> pingHops(String host) async {
   if (whoKeys != null) _whoisTimer = Timer.periodic(const Duration(seconds: 2 * risTimeout), (_) => _whoisUpdate());
   await _futuresInRange(host, firstTTL, lastTTL);
   logger?.p("ping '$host' is started (interval=${interval}sec cycles=${count ?? 'nolimit'})");
+  running = true;
   while (_futures.whereNotNull().isNotEmpty) {
     logger?.p('waitlist of ${_futures.whereNotNull().length} pings');
     await Future.wait(_futures.whereNotNull());
     while (_futureslocked) { sleep(const Duration(milliseconds: 1)); }
   }
+  running = false;
   logger?.p("ping '$host' is finished");
   _whoisTimer?.cancel();
   if (displayMode) {

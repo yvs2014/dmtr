@@ -1,3 +1,6 @@
+## 0.1.54
+- work through path changes to (un)reachable target
+
 ## 0.1.53
 - small cleanups and scripts' rearrangment, and added icon
 

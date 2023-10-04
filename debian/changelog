@@ -1,3 +1,9 @@
+dmtr (0.1.54) lunar mantic; urgency=low
+
+  * work through path changes to (un)reachable target
+
+ -- yvs <VSYakovetsky@gmail.com>  Wed, 04 Oct 2023 17:09:47 +0300
+
 dmtr (0.1.53) lunar mantic; urgency=low
 
   * small cleanups and scripts' rearrangment, and added icon

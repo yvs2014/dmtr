@@ -54,8 +54,8 @@ class Ping {
     if (count != null) _args.add('-c$count');
     if (size != null) _args.add('-s$size');
     if (qos != null) _args.add('-Q$qos');
-    if (payload != null) _args.add('-p$payload');
-    if (addrface != null) _args.add('-I$addrface');
+    if ((payload != null) && payload.isNotEmpty) _args.add('-p$payload');
+    if ((addrface != null) && addrface.isNotEmpty) _args.add('-I$addrface');
     if (numeric ?? false) _args.add('-n');
     if (ipv4 ?? false) _args.add('-4');
     if (ipv6 ?? false) _args.add('-6');
@@ -64,7 +64,7 @@ class Ping {
       onListen: _onListen,
       onPause: () => _sub.pause,
       onResume: () => _sub.resume,
-      onCancel: () => _process.kill(ProcessSignal.sigint),
+      onCancel: () { try { _process.kill(ProcessSignal.sigint); } catch (_) {} },
     );
   }
 
@@ -79,24 +79,37 @@ class Ping {
   Stream<Data> get data => _cntr.stream;
 
   Future<void> _onListen() async {
-    _process = await Process.start(_sysping, _args, environment: _utfenv);
-    _sub = StreamGroup.merge([_process.stderr, _process.stdout])
-      .transform(const Utf8Decoder()).transform(const LineSplitter()).transform<Data>(_transformer)
-      .listen((ev) => _cntr.add(ev), onDone: _done);
+    try {
+      _process = await Process.start(_sysping, _args, environment: _utfenv);
+      _sub = StreamGroup.merge([_process.stderr, _process.stdout])
+        .transform(const Utf8Decoder()).transform(const LineSplitter()).transform<Data>(_transformer)
+        .listen((ev) => _cntr.add(ev), onDone: _done);
+    } catch (e) {
+      final mesg = '$e'.replaceAllMapped(
+        RegExp(r'(.*Exception):\s+(.*)\n\s*Command:\s+(\w+)\s.*'),
+        (m) => '${m[1]}(${m[3]}): ${m[2]}');
+      _cntr.add(Data(status: Status.error, mesg: mesg));
+      _cntr.close();
+    }
   }
 
   Future<void> _done() async {
-    var rc = await _process.exitCode;
-    if (!_cntr.isClosed) {
-      _cntr.add(Data(status: Status.finish, rc: rc));
-      await _cntr.close();
-    }
-    logger?.p('ping[$ttl] finished (rc=$rc)');
+    try {
+      var rc = await _process.exitCode;
+      if (!_cntr.isClosed) {
+        _cntr.add(Data(status: Status.finish, rc: rc));
+        await _cntr.close();
+      }
+      logger?.p('ping[$ttl] finished (rc=$rc)');
+    } catch (_) {}
   }
 
   Future<bool> stop() async {
-    bool re = _process.kill(ProcessSignal.sigint);
-    if (re && !_cntr.isClosed) await _cntr.done;
+    bool re = false;
+    try {
+      re = _process.kill(ProcessSignal.sigint);
+      if (re && !_cntr.isClosed) await _cntr.done;
+    } catch (_) {}
     return re;
   }
 }

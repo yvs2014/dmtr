@@ -1,7 +1,7 @@
 name: dmtr
 adopt-info: dmtr
 base: core22
-version: 0.1.53
+version: 0.1.54
 summary: a system ping wrapper for network diagnostic
 description: |
   A network diagnostic tool based on parsing system 'ping' output

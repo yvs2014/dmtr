@@ -5,6 +5,8 @@ import 'riswhois.dart' show RIS, who2info;
 import 'params.dart';
 import 'aux.dart';
 
+typedef TsUsec = ({int sec, int usec}); // timestamp: sec, usec
+
 // Host info: ip address, resolved hostname, whois info
 typedef HostInfo = ({String? addr, String? name, RIS? whois});
 
@@ -12,19 +14,21 @@ typedef HostInfo = ({String? addr, String? name, RIS? whois});
 // note: last,best,wrst,avg in usec
 typedef HopData = ({int sent, int rcvd, int last, int best, int wrst, double avg, double jttr});
 
-typedef TsUsec = ({int sec, int usec}); // timestamp: sec, usec
-
 int maxHostaddr = 0, maxHostname = 0;
 const maxNamesPerHop = 5;
 
+bool running = false;
+
+HopData get _zeroData => (sent: 0, rcvd: 0, last: 0, best: 0, wrst: 0, avg: 0.0, jttr: 0.0);
+
 class Hop {
-  HopData data = (sent: 0, rcvd: 0, last: 0, best: 0, wrst: 0, avg: 0, jttr: 0);
+  HopData data = _zeroData;
   List<HostInfo> info = [];
   Ping? ping;
   int seq = -1; // a marker to avoid dups at calculation of 'sent'
   TsUsec? ts;   // timestamp of timeouted response
   int? prtt;    // previous RTT
-  bool unreach = false; // unreachable
+  bool reachable = true;
   String? wrong;        // message with what's wrong
   Set<int> whoislock = {}; // whois query in progress for indexes in set
   String host(int n) => dnsEnable ? ((info[n].name ?? info[n].addr) ?? '') : (info[n].addr ?? '');
@@ -52,9 +56,10 @@ class Hop {
     if (whoKeys != null) { int dl = hostTitle.length - hopTitle.length; l += dl; }
     return sprintf('%-*.*s %s', [l, l, lpart(0), rpart]);
   }
+  void clearData() { info = []; data = _zeroData; }
+  void clearNonData() { ping = ts = prtt = null; seq = -1; reachable = true; }
+  Future<void> stop() async { await ping?.stop(); clearNonData(); }
 }
-
-void cleanNonStat(Hop h) { h.ping = h.ts = h.prtt = null; h.seq = -1; h.unreach = false; }
 
 get hostPartLen {
   int l = dnsEnable ? maxHostname : maxHostaddr;

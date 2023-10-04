@@ -130,14 +130,15 @@ main(List<String> args) async {
       if (i != 0) print('');
       String now = '${DateTime.now()}';
       now = now.substring(0, now.indexOf('.'));
-      if (fails.isNotEmpty) { print('[$now] ${fails.join(", ")}'); fails = []; }
-      else { print("[$now] $title"); printReport(stat, hops); }
+      print("[$now] $title");
+      gotdata ? printReport(stat, hops) : print(nodataMesg);
+      if (fails.isNotEmpty) { print(fails.getUnique(hops).join(", ")); fails.clearAll(); }
     }
     if (jsonEnable) json.add(getMappedHops(stat, hops, targets[i])); // Add mapped stats for a target
   }
   if (displayMode) {
     closeDisplay();
-    if (fails.isNotEmpty) for (var e in fails) { print('$myname: $e'); }
+    if (fails.isNotEmpty) for (var e in fails.getUnique(hops)) { print('$myname: $e'); }
   }
   if (jsonEnable) { // Print report in JSON format
     logger?.p('print stats in json format');
