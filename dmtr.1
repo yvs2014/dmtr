@@ -3,7 +3,7 @@
 .Os
 .Sh NAME
 .Nm dmtr
-.Nd a system ping wrapper for network diagnostic
+.Nd a system ping wrapper for network diagnostic (CLI version)
 .Sh SYNOPSIS
 .Nm
 .Op Fl achijnpqrstw46
@@ -16,7 +16,7 @@ output with functionality of
 and ncurses look of
 .Sy mtr .
 .br
-It doesn't require a set-root-uid or raw-socket-perms to run
+No need set-root-uid or raw-socket-perms itself to run due to being a ping wrapper
 .Sh OPTIONS
 .Bl -tag -width Ds
 .It Fl a, Fl -address Ar IP-ADDRESS | INTERFACE-NAME
@@ -64,10 +64,13 @@ too
 .br
 Default 1,30
 .It Fl w, Fl -whois Ar KEYS
-RIS whois keys which match "[acdr]+|" pattern (AS Country Description Route)
+RIS whois keys which match "[acdr]+" pattern (AS Country Description Route)
 .br
-Default "ca" (Country AS) is aliased to
+.Fl w.
+is alias to default "ca" (Country AS)
+.br
 .Fl w-
+is alias to unset (i.e. disable whois)
 .It Fl n, Fl -numeric
 Numeric output (i.e. disable DNS resolve)
 .br

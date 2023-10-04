@@ -3,7 +3,7 @@ import 'dart:io' show Platform;
 import 'syslogger.dart' show Syslogger;
 
 get myname { var exec = Platform.executable.split('/').last; return (exec == 'dart') ? 'dmtr' : exec; }
-final version = '0.1.54';
+final version = '0.1.55';
 String? optstr;
 String? addnote;
 bool pause = false;
@@ -13,7 +13,7 @@ bool gotdata = false; // true after getting any first reply
 // without args
 bool? ipv4only;            // -4
 bool? ipv6only;            // -6
-bool dnsEnable = true;     // -n
+bool dnsEnable = true;     // -n (to disable)
 bool reportEnable = false; // -r
 bool jsonEnable = false;   // -j
 Syslogger? logger;         // --syslog
@@ -29,7 +29,7 @@ int lastTTL = maxTTL;      //
 String? payload;           // -p payload pattern
 int? qos;                  // -q QoS/ToS bits
 int? psize;                // -s payload size
-String? whoKeys;           // -w riswhois-keys (default: CC, ASN)
+String? whoKeys = whoKeysDef; // -w riswhois-keys (-w- to disable)
 const whoKeysDef = 'ca';   // default if not specified
 const whoPatt = 'acdr';    //
 const whoKeysDesc = 'AS Country Description Route';

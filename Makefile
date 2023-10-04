@@ -4,7 +4,7 @@ PREFIX ?= /usr/local
 BASEDIR = $(DESTDIR)$(PREFIX)
 MANDIR ?= $(BASEDIR)/share/man/man1
 
-$(NAME):
+$(NAME): deps
 	dart pub get
 	dart compile exe -o $@ bin/$@.dart
 
@@ -22,8 +22,8 @@ clean:
 	rm -f $(NAME)
 
 deps:
-	dpkg -s dart >/dev/null 2>&1 || (apt install -y dart || ./apt_install_dart.sh)
-	dart pub get
+	command -v dart >/dev/null || (sudo apt install -y dart || ./misc/apt_install_dart.sh)
+	dart --version
 
 .PHONY: clean
 

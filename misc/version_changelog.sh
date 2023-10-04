@@ -16,7 +16,7 @@ FILE_Y1='pubspec.yaml'
 FILE_Y2='snap/snapcraft.yaml'
 PATT_Y='version:'
 FILE_D='bin/params.dart'
-PATT_D='version\s+='
+PATT_D='\s\+version\s\+='
 
 [ $# -lt 1 ] && { echo "Use: $(basename $0) 'string with comment'"; exit 1; }
 
@@ -39,7 +39,7 @@ vn="$VERPRFX.$next"
 [ -n "$BACKUP" ] && cp "$FILE_Y2" "/tmp/$(basename $FILE_Y2).bk"
 sed -i "s/^\(\s*$PATT_Y\).*/\1 $vn/" "$FILE_Y1" "$FILE_Y2"
 [ -n "$BACKUP" ] && cp "$FILE_D" "/tmp/$(basename $FILE_D).bk"
-sed -i "s/^\(\s*$PATT_D\).*;/\1 \'$vn\';/" "$FILE_D"
+sed -i "s/^\(.*$PATT_D\).*;/\1 \'$vn\';/" "$FILE_D"
 
 [ -n "$BACKUP" ] && cp "$MD_CHANGELOG" "/tmp/$(basename $MD_CHANGELOG).bk"
 [ -n "$BACKUP" ] && cp "$DEB_CHANGELOG" "/tmp/$(basename $DEB_CHANGELOG).bk"

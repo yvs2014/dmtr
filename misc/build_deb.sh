@@ -1,6 +1,6 @@
 :
 
-# build depends on: dpkg-dev devscripts debhelper
+# build depends on: dpkg-dev debhelper
 chk_cmd() {
   command -v "$1" >/dev/null && return
   echo "FAIL: '$1' is mandatory for packaging, please install '$2'"

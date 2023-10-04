@@ -163,11 +163,11 @@ final RegExp _hex = RegExp(r'^([\da-fA-F]{1,32})$');
 final RegExp _riskeys = RegExp(r'^[' + whoPatt + r']+$');
 (String?, String?) parseWhoKeys(String s) {
   try {
-    // special case1 '' : unset
-    if (s == '')  { if (whoKeys != null) { whoKeys = null; paramsChanged = true; }}
+    // special case1 '' or '-' to unset
+    if ((s == '') || (s == '-')) { if (whoKeys != null) { whoKeys = null; paramsChanged = true; }}
     else {
-      if (s == '-') s = whoKeysDef; // special case2 '-': set default
-      if (!_riskeys.hasMatch(s)) return ("whois keys '$s' must match '[$whoPatt]+' pattern", null);
+      if (s == '.') s = whoKeysDef; // special case2 '.' to set default
+      if (!_riskeys.hasMatch(s)) return ("whois keys '$s' must match '[$whoPatt]+' pattern\n  note: use '' or '-' to unset, '.' to set default", null);
       if (s != whoKeys) {
         whoKeys = String.fromCharCodes(s.codeUnits.toSet().toList());
         whoKeysList = whoKeys?.split('') ?? [];

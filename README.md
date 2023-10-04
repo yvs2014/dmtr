@@ -1,7 +1,7 @@
 DMTR
 ---
 
-**dmtr** — a system ping wrapper for network diagnostic inspired by **mtr** look
+**dmtr** — a system ping wrapper for network diagnostic inspired by **mtr** look (CLI version)
 
 SYNOPSIS
 --------

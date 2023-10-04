@@ -1,3 +1,7 @@
+## 0.1.55
+- display whois info by default
+- update screenshots
+
 ## 0.1.54
 - work through path changes to (un)reachable target
 

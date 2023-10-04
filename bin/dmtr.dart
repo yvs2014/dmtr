@@ -39,7 +39,8 @@ main(List<String> args) async {
   parser.addOption('qos',      abbr: 'q', help: 'QoS/ToS byte to set', valueHelp: 'bits');
   parser.addOption('size',     abbr: 's', help: 'Payload size (default ${psize_.def})', valueHelp: 'bytes');
   parser.addOption('ttl',      abbr: 't', help: 'TTL range to ping, it can be also min or max only (default $firstTTL,$lastTTL)', valueHelp: 'min,max');
-  parser.addOption('whois',    abbr: 'w', help: 'RIS whois keys "[$whoPatt]+" (default "$whoKeysDef") stand for:\n$whoKeysDesc', valueHelp: 'chars');
+  parser.addOption('whois',    abbr: 'w', help: 'RIS whois keys "[$whoPatt]+" stand for "$whoKeysDesc"'
+    ' (default "$whoKeysDef")', valueHelp: 'chars');
   parser.addFlag('numeric', abbr: 'n', help: 'Numeric output (i.e. disable DNS resolve)', negatable: false);
   parser.addFlag('report',  abbr: 'r', help: 'Print simple report at exit', negatable: false);
   parser.addFlag('json',    abbr: 'j', help: 'Print report in JSON format', negatable: false);
