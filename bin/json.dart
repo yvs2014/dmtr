@@ -10,8 +10,9 @@ Map<String, dynamic> getMappedHops(List<Hop> stat, int hops, String host) {
     int end = (hops < lastTTL) ? hops : lastTTL;
     for (int i = firstTTL - 1; i < end; i++) { all.add(_hop2map(stat[i], i + 1)); }
   }
+  try { _trimEmptyEntries(all); } catch (_) {} // trim last empty entries
   var map = { 'target': host, 'stats': all };
-  if (all.isEmpty) map['info'] = nodataMesg;
+  if (all.isEmpty) map['info'] = msgs.nodata;
   if (fails.isNotEmpty) { map['fail'] = fails.getUnique(hops); fails.clearAll(); }
   return map;
 }
@@ -34,17 +35,25 @@ Map<String, dynamic> _hop2map(Hop h, int ttl) {
     if (m.isNotEmpty) hostinfo.add(m);
   }
   //
-  var all = {'ttl': ttl, 'sent': h.data.sent, 'rcvd': h.data.rcvd, 'loss': h.loss};
-  if (hostinfo.isNotEmpty) all['host'] = hostinfo;
-  if (tm.isNotEmpty) all.addAll({'timeunit': 'millisecond', 'timing': tm});
-  if (!h.reachable) all[_extra] = unreachMesg;
-  var mesg = h.wrong;
-  if (mesg != null) {
-    var extraMesg = wrongMesg(mesg).trim();
-    all[_extra] = all.containsKey(_extra) ? '${all[_extra]}, $extraMesg' : extraMesg;
-  }
-  return all;
+  var map = {'ttl': ttl, 'sent': h.data.sent, 'rcvd': h.data.rcvd, 'loss': h.loss};
+  if (hostinfo.isNotEmpty) map['host'] = hostinfo;
+  if (tm.isNotEmpty) map.addAll({'timeunit': 'millisecond', 'timing': tm});
+  List<String> ext = [];
+  if (!h.reachable) ext.add(msgs.unreach.trim());
+  var mesg = h.wrong; if (mesg != null) ext.add(mesg);
+  if (ext.isNotEmpty) map[_extra] = ext.join(', ');
+  return map;
 }
 
 dynamic _todbl(var v) { try { return double.parse(v); } catch (_) { return '$v'; } }
+
+void _trimEmptyEntries(List<Map<String, dynamic>> list) {
+  var l = list.length; int n = 0;
+  for (int i = l - 1; i > 0; i--, n++) {
+    if ((list[i]['host'] != null) || (list[i - 1]['host'] != null)) break; }
+  if (n > 0) {
+    list.removeRange(l - n, l); l = list.length - 1;
+    list[l][_extra] = msgs.nopong.trim();
+  }
+}
 

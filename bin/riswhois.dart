@@ -7,16 +7,15 @@ import 'params.dart' show logger, whoKeys, whoKeysList;
 
 
 const risTimeout = 5; // in seconds
-// Shorts: r - Route, a - ASN, d - Descr, c - CountryCode
-typedef RIS = ({String? r, String? a, String? d, String? c});
-final _k = (a: 'origin', c: 'cc', d: 'descr', r: 'route'); // maps of keys in whois response
+typedef RIS = ({String? a, String? c, String? d, String? r}); // 'acdr' stands for AS Country Description Route
+const _k = (a: 'origin', c: 'cc', d: 'descr', r: 'route');    // map of keys of whois response
 final _titleMap = {'a': [_k.a, 'AS'], 'c': [_k.c, 'CC'], 'd': [_k.d, 'Company'], 'r': [_k.r, 'Route']}; // auxiliary map
 
 
 Future<RIS?> risWhois(String addr, { int? port, int? tout}) async {
   const sc = ':';    // delimiter of 'key: value'
   const c = ',';     // delimiter of 'description, country'
-  const skip = '%';  // comment line
+  const skip = '%';  // comment
   const splitter = LineSplitter();
   final Completer<RIS?> completer = Completer<RIS?>();
   logger?.p('whois request: $addr');
@@ -36,9 +35,8 @@ Future<RIS?> risWhois(String addr, { int? port, int? tout}) async {
         if (k == _k.d) { // extract CountryCode
           final sub = v.split(c);
           if (sub.length > 1) {
-            var cc = sub.last;
-            sub.remove(cc);
-            if (cc.isNotEmpty) map[_k.c] = cc.trim();
+            var cc = sub.removeLast().trim();
+            if (cc.isNotEmpty) map[_k.c] = cc;
             v = sub.join(c);
           }
         }
@@ -50,11 +48,12 @@ Future<RIS?> risWhois(String addr, { int? port, int? tout}) async {
         int l = map[e.value[0]]?.length ?? 0;
         if (s.length < l) _titleMap[e.key]?[1] = s.padRight(l);
       }
-      completer.complete((r: map[_k.r], a: map[_k.a], d: map[_k.d], c: map[_k.c]));
+      final ris = (a:map[_k.a], c:map[_k.c], d:map[_k.d], r:map[_k.r]);
+      completer.complete(ris);
+      logger?.p("whois has completed '$addr' with '$ris'");
     }
   );
   socket.write('-m $addr\r\n');
-  logger?.p('whois complete: $addr');
   return completer.future;
 }
 

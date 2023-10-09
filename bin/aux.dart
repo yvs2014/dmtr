@@ -17,11 +17,12 @@ const Map<String,String> _notcommonFmt = {'s': '%-5s', ' ': '%s'};
 get statTitle => rpartFn({'l':'Loss', 's':'Sent', 'm':'Last', 'b':'Best', 'w':'Wrst', ' ': '', 'a':'Avrg', 'j':'Jttr'});
 
 // extra messaging
-const _unreachMesg = 'Destination is unreachable';
-final unreachMesg = sprintf('%*s%s', [lindent, '', _unreachMesg]);
-const _wrongMesg = 'Got wrong data: ';
-String wrongMesg(String cause) => sprintf('%*s%s%s', [lindent, '', _wrongMesg, cause]);
-const nodataMesg = 'no data';
+final msgs = (
+  nodata: 'no data',
+  nopong:  sprintf('%*s%s', [lindent, '', 'No response']),
+  unreach: sprintf('%*s%s', [lindent, '', 'Destination is unreachable']),
+  wrong: (String cause) => sprintf('%*s%s', [lindent, '', 'Got wrong data: $cause']),
+);
 
 // pretty print
 const _floatUpto = 10;
@@ -71,6 +72,17 @@ final int hkTotal = keyhints.reduce((a, b) => (key: '${a.key} ${b.key}', b:0, hi
 
 //
 // rest: aux functions
+
+typedef PongData = ({bool pong, List<String> data});
+void trimTail(List<PongData> list, { bool trim = false }) {
+  var l = list.length;
+  int n = 0; for (int i = l - 1; i > 0; i--, n++) { if (list[i].pong || list[i - 1].pong) break; }
+  if (n > 0) {
+    list.removeRange(l - n, l); l = list.length - 1;
+    var mesg = msgs.nopong; if (trim) mesg = mesg.trim();
+    list[l] = (pong: false, data: [mesg]);
+  }
+}
 
 String rpartFn(Map<String, String> m) {
   List<String> fmts = [], args = [];

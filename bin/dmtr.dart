@@ -132,7 +132,7 @@ main(List<String> args) async {
       String now = '${DateTime.now()}';
       now = now.substring(0, now.indexOf('.'));
       print("[$now] $title");
-      gotdata ? printReport(stat, hops) : print(nodataMesg);
+      gotdata ? printReport(stat, hops) : print(msgs.nodata);
       if (fails.isNotEmpty) { print(fails.getUnique(hops).join(", ")); fails.clearAll(); }
     }
     if (jsonEnable) json.add(getMappedHops(stat, hops, targets[i])); // Add mapped stats for a target

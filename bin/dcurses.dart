@@ -116,7 +116,7 @@ int printTitle(int y0, int w, {bool over = false, bool up = false}) {
     if (whoKeys != whoopt) subs.add("whois '$whoKeys'");
     if (subs.isNotEmpty) { var s = subs.where((p) => (p != null) && p.isNotEmpty).join(', '); parts.add('($s)'); }
     if (addnote != null) parts.add(addnote);
-    if (!gotdata && running) parts.add(': $nodataMesg yet');
+    if (!gotdata && running) parts.add(': ${msgs.nodata} yet');
     if (over) { move(y, 0); clrtoeol(); }
     { var s = parts.where((p) => (p != null) && p.isNotEmpty).join(' ');
       mvaddwstr(y++, 0, sprintf('%*s', [(cols + s.length) ~/ 2, s])); }
@@ -162,18 +162,24 @@ void showStat(String host, List<Hop> stat, int hops) {
     clear();
     int y = printTitle(0, w);
     if ((hops > 0) && gotdata) {
+      List<PongData> pongs = [];
+      bool pong = true;
       int end = (hops < lastTTL) ? hops : lastTTL;
       for (int i = firstTTL - 1; i < end; i++) {
+        List<String> data = [];
+        pong = stat[i].info.isNotEmpty;
         String no = sprintf('%2d. ', [i + 1]);
-        String addr = stat[i].info.isNotEmpty ? stat[i].lpart(0) : '';
-        mvaddstr(y++, 0, sprintf('%*s%-*.*s %s', [lindent, no, w, w, addr, stat[i].rpart]));
+        String addr = pong ? stat[i].lpart(0) : '';
+        data.add(sprintf('%*s%-*.*s %s', [lindent, no, w, w, addr, stat[i].rpart]));
         for (int j = 1; j < stat[i].info.length; j++) {
-          mvaddstr(y++, 0, sprintf('%*s%s', [lindent, '', stat[i].lpart(j)]));
-        }
-        if (!stat[i].reachable) mvaddstr(y++, 0, unreachMesg);
+          data.add(sprintf('%*s%s', [lindent, '', stat[i].lpart(j)])); }
+        if (!stat[i].reachable) data.add(msgs.unreach);
         var mesg = stat[i].wrong;
-        if (mesg != null) mvaddstr(y++, 0, wrongMesg(mesg));
+        if (mesg != null) data.add(msgs.wrong(mesg));
+        pongs.add((pong: pong, data: data));
       }
+      if (!pong) try { trimTail(pongs); } catch (_) {}
+      for (var p in pongs) { for (var s in p.data) { mvaddstr(y++, 0, s); }}
     }
     refresh();
   }

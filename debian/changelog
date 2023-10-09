@@ -1,3 +1,9 @@
+dmtr (0.1.56) lunar mantic; urgency=low
+
+  * trim last empty hop-lines
+
+ -- yvs <VSYakovetsky@gmail.com>  Mon, 09 Oct 2023 12:07:13 +0300
+
 dmtr (0.1.55) lunar mantic; urgency=low
 
   * display whois info by default

@@ -21,6 +21,6 @@ DETAILS
 ------------------------------------------------------------------------
 SCREENSHOTS
 -----------
-## display CountryCode and ASNumber in stats with I18N hostname in title
+## ordinary view
 ![ww-screenshot01](https://raw.githubusercontent.com/yvs2014/dmtr/main/img/ww-screenshot01.png)
 
