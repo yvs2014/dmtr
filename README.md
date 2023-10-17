@@ -1,7 +1,7 @@
 DMTR
 ---
 
-**dmtr** — a system ping wrapper for network diagnostic inspired by **mtr** look (CLI version)
+**dmtr** — system **ping** wrapper for network diagnostic inspired by **mtr** (CLI version)
 
 SYNOPSIS
 --------
@@ -11,7 +11,7 @@ SYNOPSIS
 DESCRIPTION
 -----------
 
-A network diagnostic tool based on parsing system **ping** output with functionality of traceroute and ncurses look of **mtr**.
+CLI network diagnostic tool based on parsing system **ping** output with functionality of **traceroute** and look a bit of ncurses **mtr**.
 No need set-root-uid or raw-socket-perms itself to run due to being a wrapper.
 
 DETAILS

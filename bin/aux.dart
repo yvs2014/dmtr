@@ -8,7 +8,7 @@ String? _title;
 get title => _title;
 set title(host) { _title = ['$myname-$version', optstr, host].where((a) => (a != null) && a.isNotEmpty).join(' '); }
 // left(host)
-const hopTitle = 'Hops';
+const hopTitle = 'Hop';
 const lindent = 4; // lpart's indent
 get hostTitle => withWhoTitle(hopTitle);
 // right(stat)
@@ -109,8 +109,8 @@ final RegExp _statkeys = RegExp(r'^[' + statKeysDef + r']+$');
   try {
     if (!_statkeys.hasMatch(s)) return ("stat fields '$s' must match '[$statKeysDef]+' pattern", null);
     if (s != statKeys) {
-      statKeys = String.fromCharCodes(s.codeUnits.toSet().toList());
-      statKeysList = statKeys.split('');
+      statKeysList = s.split('').toSet().toList(); // with dart LinkedHashSet: insert+iteration keeps order
+      statKeys = statKeysList.join('');
       paramsChanged = true; }
   } catch (e) { return ('stat fields: $e', null); }
   return (null, statKeys);
@@ -181,8 +181,8 @@ final RegExp _riskeys = RegExp(r'^[' + whoPatt + r']+$');
       if (s == '.') s = whoKeysDef; // special case2 '.' to set default
       if (!_riskeys.hasMatch(s)) return ("whois keys '$s' must match '[$whoPatt]+' pattern\n  note: use '' or '-' to unset, '.' to set default", null);
       if (s != whoKeys) {
-        whoKeys = String.fromCharCodes(s.codeUnits.toSet().toList());
-        whoKeysList = whoKeys?.split('') ?? [];
+        whoKeysList = s.split('').toSet().toList(); // with dart LinkedHashSet: insert+iteration keeps order
+        whoKeys = whoKeysList.join('');
         paramsChanged = true;
       }
     }
