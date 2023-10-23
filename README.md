@@ -19,6 +19,11 @@ DETAILS
 ... *see dmtr.1 page*
 
 ------------------------------------------------------------------------
+SNAP
+-----------
+[![at Snap Store](https://res.cloudinary.com/canonical/image/fetch/f_auto,q_auto,fl_sanitize,w_60,h_60/https://dashboard.snapcraft.io/site_media/appmedia/2023/10/dmtr.png)](https://snapcraft.io/dmtr/embedded?button=black)
+
+------------------------------------------------------------------------
 SCREENSHOTS
 -----------
 ## ordinary view

@@ -1,3 +1,6 @@
+## 0.1.58
+- add assets' references
+
 ## 0.1.57
 - adjust a couple lines
 
