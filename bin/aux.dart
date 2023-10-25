@@ -55,7 +55,7 @@ typedef KeyHint = ({String key, int b, String hint}); // 'b' is index of bold ch
 final List<KeyHint> keyhints = [
   (key: 'count',   b: 0, hint: 'number of cycles to ping'),
   (key: 'fields',  b: 0, hint: 'stat fields to display, chars stand for: $statKeysDesc'),
-  (key: 'dns',     b: 0, hint: 'toggle hostname/ipaddr show (note: on linux it works only in non-numeric mode)'),
+  (key: 'dns',     b: 0, hint: 'toggle hostname/ipaddr show'),
   (key: 'ival',    b: 0, hint: 'interval between pings in seconds'),
   (key: 'payload', b: 0, hint: 'payload pattern'),
   (key: 'qos',     b: 0, hint: 'set QoS bits'),

@@ -7,14 +7,15 @@ import 'params.dart';
 import 'dcurses.dart';
 import 'sysping.dart' show Ping, Data, Status;
 import 'aux.dart' show fails;
-import 'riswhois.dart';
+import 'backresolv.dart' show ARES, resolv, resTimeout;
+import 'riswhois.dart' show ARIS, risWhois, risTimeout;
 
 late int _hops;
 int get hops => _hops;
 List<Hop> stat = [];
 var _futures = List<Future<void>?>.filled(maxTTL, null, growable: false); // ping futures
 bool _futureslocked = false;
-Timer? _whoisTimer;
+Timer? _resolvTimer, _whoisTimer;
 
 
 void _clearPings() {
@@ -58,6 +59,7 @@ void _insertAddr(int ndx, String addr, String? name) {
     stat[ndx].info[at] = (addr: stat[ndx].info[at].addr, name: name, whois: stat[ndx].info[at].whois);
     if (name.length > maxHostname) maxHostname = name.length;
   }
+  if (dnsEnable && (name == null)) _resolvUpdate();
   if (whoKeys != null) _whoisUpdate();
 }
 
@@ -224,7 +226,9 @@ void _keyActions(String host) {
     case 'f': keyFields();
       if (paramsChanged) { paramsChanged = false; _postclearNote = true; }
       logger?.p("action 'fields': statKeys=$statKeys");
-    case 'd': if (!numeric) dnsEnable = !dnsEnable;
+    case 'd': dnsEnable = !dnsEnable;
+      if (dnsEnable) { _resolvTimer ??= Timer.periodic(const Duration(seconds: 2 * resTimeout), (_) => _resolvUpdate()); }
+      else { _resolvTimer?.cancel(); _resolvTimer = null; }
       logger?.p("action 'dns': dnsEnable=$dnsEnable");
     case 'i': _resetPings(host, 'interval', keyIval, () => 'interval: $interval');
     case 'p': _resetPings(host, 'payload', keyPayload, () => 'payload pattern: $payload');
@@ -264,14 +268,47 @@ void _keyActions(String host) {
   }
 }
 
+Future<void> _waitResolvReply(int i, int j) async {
+  stat[i].reslock.add(j);
+  var addr = stat[i].info[j].addr;
+  if (addr != null) {
+    ARES? ares;
+    try {
+      ares = await resolv(addr);
+      try { // avoid race condition comparing addresses
+        if ((ares != null) && (ares.addr == stat[i].info[j].addr)) {
+          stat[i].info[j] = (addr: addr, name: ares.name, whois: stat[i].info[j].whois); }
+      } catch (_) {}
+    } catch (e) { logger?.p('resolv: $e'); }
+  }
+  stat[i].reslock.remove(j);
+}
+
+Future<void> _resolvUpdate() async {
+  if (!dnsEnable) return;
+  int end = (hops < lastTTL) ? hops : lastTTL;
+  List<Future<void>> list = [];
+  for (int i = firstTTL - 1; i < end; i++) {
+    for (int j = 0; j < stat[i].info.length; j++) {
+      if (stat[i].reslock.contains(j)) continue;
+      if (stat[i].info[j].name == null) list.add(_waitResolvReply(i, j));
+    }
+  }
+  await Future.wait(list);
+}
+
 Future<void> _waitWhoisReply(int i, int j) async {
   stat[i].whoislock.add(j);
   var addr = stat[i].info[j].addr;
   if (addr != null) {
-    RIS? ris;
-    try { ris = await risWhois(addr); }
-    catch (e) { logger?.p('whois: $e'); }
-    finally { stat[i].info[j] = (addr: addr, name: stat[i].info[j].name, whois: ris); }
+    ARIS? aris;
+    try {
+      aris = await risWhois(addr);
+      try { // avoid race condition comparing addresses
+        if ((aris != null) && (aris.addr == stat[i].info[j].addr)) {
+          stat[i].info[j] = (addr: addr, name: stat[i].info[j].name, whois: aris.ris); }
+      } catch (_) {}
+    } catch (e) { logger?.p('whois: $e'); }
   }
   stat[i].whoislock.remove(j);
 }
@@ -296,6 +333,7 @@ Future<void> pingHops(String host) async {
     pingTimer = Timer.periodic(const Duration(seconds: 1), (_) => showStat(host, stat, _hops));
     kbdTimer = Timer.periodic(const Duration(milliseconds: 100), (_) => _keyActions(host));
   }
+  if (dnsEnable) _resolvTimer = Timer.periodic(const Duration(seconds: 2 * resTimeout), (_) => _resolvUpdate());
   if (whoKeys != null) _whoisTimer = Timer.periodic(const Duration(seconds: 2 * risTimeout), (_) => _whoisUpdate());
   await _futuresInRange(host, firstTTL, lastTTL);
   logger?.p("ping '$host' is started (interval=${interval}sec cycles=${count ?? 'nolimit'})");
@@ -307,6 +345,7 @@ Future<void> pingHops(String host) async {
   }
   running = false;
   logger?.p("ping '$host' is finished");
+  _resolvTimer?.cancel();
   _whoisTimer?.cancel();
   if (displayMode) {
     sleep(Duration(milliseconds: interval * 1000 ~/ 2));

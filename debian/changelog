@@ -1,3 +1,10 @@
+dmtr (0.1.59) lunar mantic; urgency=low
+
+  * add its own ip-address back resolver (so that it allows runtime dns toggling for numeric pings too)
+  * extra ip-address check for whois setter
+
+ -- yvs <VSYakovetsky@gmail.com>  Wed, 25 Oct 2023 08:42:58 +0300
+
 dmtr (0.1.58) lunar mantic; urgency=low
 
   * add assets' references

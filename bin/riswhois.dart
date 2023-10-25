@@ -8,16 +8,17 @@ import 'params.dart' show logger, whoKeys, whoKeysList;
 
 const risTimeout = 5; // in seconds
 typedef RIS = ({String? a, String? c, String? d, String? r}); // 'acdr' stands for AS Country Description Route
+typedef ARIS = ({String addr, RIS ris}); // RIS complement to addr
 const _k = (a: 'origin', c: 'cc', d: 'descr', r: 'route');    // map of keys of whois response
 final _titleMap = {'a': [_k.a, 'AS'], 'c': [_k.c, 'CC'], 'd': [_k.d, 'Company'], 'r': [_k.r, 'Route']}; // auxiliary map
 
 
-Future<RIS?> risWhois(String addr, { int? port, int? tout}) async {
+Future<ARIS?> risWhois(String addr, { int? port, int? tout}) async {
   const sc = ':';    // delimiter of 'key: value'
   const c = ',';     // delimiter of 'description, country'
   const skip = '%';  // comment
   const splitter = LineSplitter();
-  final Completer<RIS?> completer = Completer<RIS?>();
+  final completer = Completer<ARIS?>();
   logger?.p('whois request: $addr');
   final socket = await Socket.connect("riswhois.ripe.net", port ?? 43, timeout: Duration(seconds: tout ?? risTimeout));
   List<String> together = [];
@@ -49,8 +50,8 @@ Future<RIS?> risWhois(String addr, { int? port, int? tout}) async {
         if (s.length < l) _titleMap[e.key]?[1] = s.padRight(l);
       }
       final ris = (a:map[_k.a], c:map[_k.c], d:map[_k.d], r:map[_k.r]);
-      completer.complete(ris);
-      logger?.p("whois has completed '$addr' with '$ris'");
+      completer.complete((addr: addr, ris: ris));
+      logger?.p("whois has completed $addr with $ris");
     }
   );
   socket.write('-m $addr\r\n');

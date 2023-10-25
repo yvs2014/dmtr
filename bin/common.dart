@@ -30,8 +30,10 @@ class Hop {
   int? prtt;    // previous RTT
   bool reachable = true;
   String? wrong;        // message with what's wrong
+  Set<int> reslock = {}; // resolv in progress for indexes in set
   Set<int> whoislock = {}; // whois query in progress for indexes in set
-  String host(int n) => dnsEnable ? ((info[n].name ?? info[n].addr) ?? '') : (info[n].addr ?? '');
+  String? _ha(int n) => (info[n].name ?? '').isEmpty ? info[n].addr : info[n].name;
+  String host(int n) => (dnsEnable ? _ha(n) : info[n].addr) ?? '';
   String get loss => (data.sent > 0) ? '${prfmt((data.sent - data.rcvd) / data.sent * 100)}%' : '';
   String get msec => (data.rcvd > 0) ? (_ok ? prfmt(data.last / 1000) : '') : '';
   String get best => (data.rcvd > 0) ? (_ok ? prfmt(data.best / 1000) : '') : '';

@@ -1,3 +1,7 @@
+## 0.1.59
+- add its own ip-address back resolver (so that it allows runtime dns toggling for numeric pings too)
+- extra ip-address check for whois setter
+
 ## 0.1.58
 - add assets' references
 
