@@ -1,3 +1,8 @@
+## 0.1.60
+- optimize a bit dns/whois resolve calls
+- update headline and add hints to input fields
+- update screenshots
+
 ## 0.1.59
 - add its own ip-address back resolver (so that it allows runtime dns toggling for numeric pings too)
 - extra ip-address check for whois setter

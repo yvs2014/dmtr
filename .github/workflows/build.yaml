@@ -1,4 +1,4 @@
-name: build_and_run
+name: build
 
 on:
   push:

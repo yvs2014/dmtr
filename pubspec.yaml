@@ -1,7 +1,7 @@
 
 name: dmtr
 description: sys ping wrapper (CLI version)
-version: 0.1.59
+version: 0.1.60
 repository: https://github.com/yvs2014/dmtr
 
 environment:

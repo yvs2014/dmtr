@@ -7,8 +7,8 @@ import 'params.dart';
 import 'dcurses.dart';
 import 'sysping.dart' show Ping, Data, Status;
 import 'aux.dart' show fails;
-import 'backresolv.dart' show ARES, resolv, resTimeout;
-import 'riswhois.dart' show ARIS, risWhois, risTimeout;
+import 'backresolv.dart' show resolv, resTimeout;
+import 'riswhois.dart' show risWhois, risTimeout;
 
 late int _hops;
 int get hops => _hops;
@@ -54,13 +54,16 @@ void _insertAddr(int ndx, String addr, String? name) {
     if (stat[ndx].info.length > maxNamesPerHop) stat[ndx].info.removeLast();
     if (addr.length > maxHostaddr) maxHostaddr = addr.length;
     if (maxHostaddr > maxHostname) maxHostname = maxHostaddr;
-    if ((name != null) && (name.length > maxHostname)) maxHostname = name.length;
-  } else if ((stat[ndx].info[at].name == null) && (name != null)) { // if name is not set before
-    stat[ndx].info[at] = (addr: stat[ndx].info[at].addr, name: name, whois: stat[ndx].info[at].whois);
-    if (name.length > maxHostname) maxHostname = name.length;
+    if (name != null) { if (name.length > maxHostname) maxHostname = name.length; }
+    else { _resolvAt(ndx, 0); }
+    _whoisAt(ndx, 0);
+  } else if (stat[ndx].info[at].name == null) { // name is not set before
+    if (name != null) {
+      stat[ndx].info[at] = (addr: stat[ndx].info[at].addr, name: name, whois: stat[ndx].info[at].whois);
+      if (name.length > maxHostname) maxHostname = name.length;
+    } else { _resolvAt(ndx, at); }
+    if (stat[ndx].info[at].whois == null) _whoisAt(ndx, at);
   }
-  if (dnsEnable && (name == null)) _resolvUpdate();
-  if (whoKeys != null) _whoisUpdate();
 }
 
 void _saveAddrName(int ndx, Data data) {
@@ -272,9 +275,8 @@ Future<void> _waitResolvReply(int i, int j) async {
   stat[i].reslock.add(j);
   var addr = stat[i].info[j].addr;
   if (addr != null) {
-    ARES? ares;
     try {
-      ares = await resolv(addr);
+      final ares = await resolv(addr);
       try { // avoid race condition comparing addresses
         if ((ares != null) && (ares.addr == stat[i].info[j].addr)) {
           stat[i].info[j] = (addr: addr, name: ares.name, whois: stat[i].info[j].whois); }
@@ -282,6 +284,10 @@ Future<void> _waitResolvReply(int i, int j) async {
     } catch (e) { logger?.p('resolv: $e'); }
   }
   stat[i].reslock.remove(j);
+}
+
+Future<void> _resolvAt(int i, int j) async {
+  if (dnsEnable && !stat[i].reslock.contains(j)) await _waitResolvReply(i, j);
 }
 
 Future<void> _resolvUpdate() async {
@@ -301,9 +307,8 @@ Future<void> _waitWhoisReply(int i, int j) async {
   stat[i].whoislock.add(j);
   var addr = stat[i].info[j].addr;
   if (addr != null) {
-    ARIS? aris;
     try {
-      aris = await risWhois(addr);
+      final aris = await risWhois(addr);
       try { // avoid race condition comparing addresses
         if ((aris != null) && (aris.addr == stat[i].info[j].addr)) {
           stat[i].info[j] = (addr: addr, name: stat[i].info[j].name, whois: aris.ris); }
@@ -311,6 +316,10 @@ Future<void> _waitWhoisReply(int i, int j) async {
     } catch (e) { logger?.p('whois: $e'); }
   }
   stat[i].whoislock.remove(j);
+}
+
+Future<void> _whoisAt(int i, int j) async {
+  if ((whoKeys != null) && !stat[i].whoislock.contains(j)) await _waitWhoisReply(i, j);
 }
 
 Future<void> _whoisUpdate() async {

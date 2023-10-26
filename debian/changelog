@@ -1,3 +1,11 @@
+dmtr (0.1.60) lunar mantic; urgency=low
+
+  * optimize a bit dns/whois resolve calls
+  * update headline and add hints to input fields
+  * update screenshots
+
+ -- yvs <VSYakovetsky@gmail.com>  Thu, 26 Oct 2023 20:07:00 +0300
+
 dmtr (0.1.59) lunar mantic; urgency=low
 
   * add its own ip-address back resolver (so that it allows runtime dns toggling for numeric pings too)

@@ -53,11 +53,15 @@ void keyHelp() {
 
 typedef _InputFn = (String?, String?) Function(String input);
 
-void _getInput(String what, _InputFn fn) {
+void _getInput(String what, _InputFn fn, {String? key}) {
   final prompt = 'Enter $what: ';
   pause = true;
   clear();
   int y = 2, x = 1;
+  if (key != null) {
+    final hint = keyhints.where((a) => (a.key == key)).toList();
+    if (hint.isNotEmpty) mvaddstr(y + 2, x, 'note, ${hint[0].hint}');
+  }
   mvaddstr(y, x, prompt);
   List<int> input = [];
   echo();
@@ -81,6 +85,7 @@ void _getInput(String what, _InputFn fn) {
     var (e, a) = fn(utf8.decode(input).trim());
     if ((a != null) && paramsChanged) addnote = '$what: $a';
     if (e != null) {
+      move(y + 2, x); clrtoeol();
       mvaddstr(y + 2, x, 'ERROR: $e');
       refresh();
       logger?.p('input error: $e');
@@ -90,14 +95,14 @@ void _getInput(String what, _InputFn fn) {
   pause = false;
 }
 
-void keyCycles() => _getInput('cycles', parseCycles);
-void keyFields() => _getInput('stat fields', parseStatKeys);
-void keyIval() => _getInput('interval', parseIval);
-void keyPayload() => _getInput('payload pattern', parsePayload);
-void keyQoS() => _getInput('QoS/ToS bits', parseQoS);
-void keySize() => _getInput('payload size', parseSize);
-void keyTTL() => _getInput('TTL range', parseTTL);
-void keyWhois() => _getInput('RIS whois keys', parseWhoKeys);
+void keyCycles() => _getInput('cycles', parseCycles, key: 'count');
+void keyFields() => _getInput('stat fields', parseStatKeys, key: 'fields');
+void keyIval() => _getInput('interval', parseIval, key: 'ival');
+void keyPayload() => _getInput('payload pattern', parsePayload, key: 'payload');
+void keyQoS() => _getInput('QoS/ToS bits', parseQoS, key: 'qos');
+void keySize() => _getInput('payload size', parseSize, key: 'size');
+void keyTTL() => _getInput('TTL range', parseTTL, key: 'ttl');
+void keyWhois() => _getInput('RIS whois keys', parseWhoKeys, key: 'Whois');
 
 int printTitle(int y0, int w, {bool over = false, bool up = false}) {
   int y = y0;
@@ -113,7 +118,7 @@ int printTitle(int y0, int w, {bool over = false, bool up = false}) {
     if (qos != qosopt) subs.add('QoS $qos');
     if (psize != pszopt) subs.add('psize $psize');
     if (payload != pldopt) subs.add('payload $payload');
-    if (whoKeys != whoopt) subs.add("whois '$whoKeys'");
+    if (whoKeys != whoopt) { var who = (whoKeys != null) ? "'$whoKeys'" : 'off'; subs.add("whois $who"); }
     if (subs.isNotEmpty) { var s = subs.where((p) => (p != null) && p.isNotEmpty).join(', '); parts.add('($s)'); }
     if (addnote != null) parts.add(addnote);
     if (!gotdata && running) parts.add(': ${msgs.nodata} yet');

@@ -54,18 +54,19 @@ class Fails {
 typedef KeyHint = ({String key, int b, String hint}); // 'b' is index of bold character
 final List<KeyHint> keyhints = [
   (key: 'count',   b: 0, hint: 'number of cycles to ping'),
-  (key: 'fields',  b: 0, hint: 'stat fields to display, chars stand for: $statKeysDesc'),
-  (key: 'dns',     b: 0, hint: 'toggle hostname/ipaddr show'),
+  (key: 'fields',  b: 0, hint: "statistic keys [$statKeysDef] stand for '$statKeysDesc'"),
+  (key: 'dns',     b: 0, hint: 'toggle what to display in Hop field, hostname or IP address'),
   (key: 'ival',    b: 0, hint: 'interval between pings in seconds'),
-  (key: 'payload', b: 0, hint: 'payload pattern'),
-  (key: 'qos',     b: 0, hint: 'set QoS bits'),
-  (key: 'size',    b: 0, hint: 'payload size'),
+  (key: 'payload', b: 0, hint: 'payload pattern, upto 16bytes, regexp [0-9a-fA-F]{1,32}'),
+  (key: 'qos',     b: 0, hint: 'set QoS bits (0..2), or ToS byte (0..255)'),
+  (key: 'size',    b: 0, hint: 'payload size in range ${psize_.min}..${psize_.max}'),
   (key: 'ttl',     b: 0, hint: 'set TTL range in min,max format'),
-  (key: 'who',     b: 0, hint: "toggle whois info diaplying (note: press 'W' to set whois-fields in [$whoPatt]+ format)"),
-  (key: 'Reset',   b: 0, hint: 'reset stats'),
-  (key: 'Pause',   b: 0, hint: 'pause/resume'),
+  (key: 'who',     b: 0, hint: 'toggle displaying of whois information'),
+  (key: 'Whois',   b: 0, hint: "keys [$whoPatt] with default '$whoKeysDef' stand for '$whoKeysDesc'"),
+  (key: 'Reset',   b: 0, hint: 'reset statistics'),
+  (key: 'Pause',   b: 0, hint: "pause/resume, <space> button is aliased to 'P'"),
   (key: 'Quit',    b: 0, hint: "stop and exit, 'x' is aliased to 'Q'"),
-  (key: 'Help',    b: 0, hint: 'this help'),
+  (key: 'Help',    b: 0, hint: "this help, 'h' is aliased to 'H'"),
 ];
 final int hkMaxLen = keyhints.reduce((a, b) => ((a.key.length > b.key.length) ? a : b)).key.length;
 final int hkTotal = keyhints.reduce((a, b) => (key: '${a.key} ${b.key}', b:0, hint:'')).key.length;

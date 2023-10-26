@@ -23,7 +23,7 @@ Future<ARIS?> risWhois(String addr, { int? port, int? tout}) async {
   final socket = await Socket.connect("riswhois.ripe.net", port ?? 43, timeout: Duration(seconds: tout ?? risTimeout));
   List<String> together = [];
   socket.listen((Uint8List data) { together += splitter.convert(String.fromCharCodes(data)); },
-    onError: (e) { socket.destroy(); completer.complete(null); logger?.p('whois sock: $e'); },
+    onError: (e) { socket.destroy(); completer.complete(null); logger?.p('[ERROR] whois sock: $e'); },
     onDone: () {
       socket.destroy();
       together.removeWhere((l) => (l.isEmpty || (l[0] == skip) || !l.contains(sc)));
