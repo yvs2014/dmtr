@@ -7,6 +7,7 @@ const resTimeout = 5; // in seconds
 
 const _stoppers = { // from getaddrinfo(3)
   -2,   // EAI_NONAME     unknown name or service
+  -3,   // EAI_AGAIN      temporary failure
   -4,   // EAI_FAIL       non-recoverable failure
   -5,   // EAI_NODATA     no address associated with
   -6,   // EAI_FAMILY     not supported family
@@ -33,7 +34,7 @@ Future<ARES?> resolv(String addr, { bool? ipv4/*, int? tout*/}) async {
     try { mesg = e.osError?.message; rc = e.osError?.errorCode; }
     catch (_) {}
     completer.complete((addr: addr, name: _stoppers.contains(rc ?? 0) ? '' : null));
-    logger?.p('[ERROR] resolv($addr): ${mesg ?? e}');
+    logger?.p('[ERROR($rc)] resolv($addr): ${mesg ?? e}');
   } catch (e) {
     completer.complete(null);
     logger?.p('[ERROR] resolv: $e');

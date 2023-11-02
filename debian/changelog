@@ -1,3 +1,9 @@
+dmtr (0.1.61) lunar mantic; urgency=low
+
+  * add EAI_AGAIN(-3) code to backresolv stoppers to reduce number of dns requests (spotted with backresolving grey addresses)
+
+ -- yvs <VSYakovetsky@gmail.com>  Thu, 02 Nov 2023 14:01:59 +0200
+
 dmtr (0.1.60) lunar mantic; urgency=low
 
   * optimize a bit dns/whois resolve calls

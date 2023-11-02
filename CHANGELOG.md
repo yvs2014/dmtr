@@ -1,3 +1,6 @@
+## 0.1.61
+- add EAI_AGAIN(-3) code to backresolv stoppers to reduce number of dns requests (spotted with backresolving grey addresses)
+
 ## 0.1.60
 - optimize a bit dns/whois resolve calls
 - update headline and add hints to input fields
