@@ -1,7 +1,7 @@
 name: dmtr
 adopt-info: dmtr
 base: core22
-version: 0.1.61
+version: 0.1.62
 summary: system ping wrapper for network diagnostic (CLI version)
 description: |
   CLI network diagnostic tool based on parsing system 'ping' output with functionality of 'traceroute' inspired by ncurses 'mtr'
@@ -17,8 +17,7 @@ apps:
     command: usr/bin/dmtr
     plugs:
       - network
-      - network-control
-#      - system-observe # for dart itself?
+      - network-observe # for system 'ping' tool
 
 parts:
   dmtr:

@@ -1,3 +1,7 @@
+## 0.1.62
+- change 'network-control' plug to 'network-observe' as it suggested on snapcraft
+- check against positive resolv error codes too (as in fmtr)
+
 ## 0.1.61
 - add EAI_AGAIN(-3) code to backresolv stoppers to reduce number of dns requests (spotted with backresolving grey addresses)
 

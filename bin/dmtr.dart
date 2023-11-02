@@ -21,7 +21,7 @@ void usage(String name, help, int indent) {
 
 final _snapHint =
 "\nIf it's a snap package, pings can be allowed with the following command:"
-"\nsnap connect $myname:network-control :network-control";
+"\nsnap connect $myname:network-observe :network-observe";
 
 main(List<String> args) async {
   { final failed = await probeSysping();

@@ -1,3 +1,10 @@
+dmtr (0.1.62) lunar mantic; urgency=low
+
+  * change 'network-control' plug to 'network-observe' as it suggested on snapcraft
+  * check against positive resolv error codes too (as in fmtr)
+
+ -- yvs <VSYakovetsky@gmail.com>  Thu, 02 Nov 2023 15:26:41 +0200
+
 dmtr (0.1.61) lunar mantic; urgency=low
 
   * add EAI_AGAIN(-3) code to backresolv stoppers to reduce number of dns requests (spotted with backresolving grey addresses)

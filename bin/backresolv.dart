@@ -18,6 +18,8 @@ const _stoppers = { // from getaddrinfo(3)
   -105, // EAI_IDN_ENCODE IDN encoding failed
 };
 
+bool _chkstop(int rc) => _stoppers.contains(rc) ? true : _stoppers.contains(-rc);
+
 typedef ARES = ({String addr, String? name}); // addr resolved in name
 
 Future<ARES?> resolv(String addr, { bool? ipv4/*, int? tout*/}) async {
@@ -33,7 +35,7 @@ Future<ARES?> resolv(String addr, { bool? ipv4/*, int? tout*/}) async {
     String? mesg; int? rc;
     try { mesg = e.osError?.message; rc = e.osError?.errorCode; }
     catch (_) {}
-    completer.complete((addr: addr, name: _stoppers.contains(rc ?? 0) ? '' : null));
+    completer.complete((addr: addr, name: _chkstop(rc ?? 0) ? '' : null));
     logger?.p('[ERROR($rc)] resolv($addr): ${mesg ?? e}');
   } catch (e) {
     completer.complete(null);
