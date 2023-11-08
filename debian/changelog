@@ -1,3 +1,10 @@
+dmtr (0.1.63) lunar mantic; urgency=low
+
+  * rm info message about already autoconnected snap plug
+  * set full path to ping
+
+ -- yvs <VSYakovetsky@gmail.com>  Wed, 08 Nov 2023 12:12:08 +0200
+
 dmtr (0.1.62) lunar mantic; urgency=low
 
   * change 'network-control' plug to 'network-observe' as it suggested on snapcraft

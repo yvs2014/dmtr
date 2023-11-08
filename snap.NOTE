@@ -1,3 +1,0 @@
-Snap 'ping' needs ':network-observe' plug to work and it's not connected automatically.
-So that pings can be allowed with the following command (once after installation):
-snap connect dmtr:network-observe :network-observe

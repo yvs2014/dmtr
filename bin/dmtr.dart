@@ -19,14 +19,8 @@ void usage(String name, help, int indent) {
   exit(-1);
 }
 
-final _snapHint =
-"\nIf it's a snap package, pings can be allowed with the following command:"
-"\nsnap connect $myname:network-observe :network-observe";
-
 main(List<String> args) async {
-  { final failed = await probeSysping();
-  if (failed != null) { print(failed.replaceAllMapped(
-    RegExp(r'^(\w+):\s+(Permission denied)'), (m) => '${m[1]}: ${m[2]}\n$_snapHint')); exit(-1); }}
+  { final failed = await probeSysping(); if (failed != null) { print(failed); exit(-1); }}
   List<String> targets = [];
 
   // Parse arguments

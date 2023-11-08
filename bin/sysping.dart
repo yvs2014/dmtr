@@ -7,7 +7,7 @@ import 'params.dart' show logger;
 
 enum Status { undefined, success, discard, timeout, unknown, error, wrong, finish }
 const _utfenv = {'LC_ALL': 'C.UTF-8'};
-const _sysping = 'ping';
+const _sysping = '/bin/ping';
 
 Future<dynamic> probeSysping() async {
   try { Process.runSync(_sysping, []); }

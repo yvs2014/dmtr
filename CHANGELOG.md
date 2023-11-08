@@ -1,3 +1,7 @@
+## 0.1.63
+- rm info message about already autoconnected snap plug
+- set full path to ping
+
 ## 0.1.62
 - change 'network-control' plug to 'network-observe' as it suggested on snapcraft
 - check against positive resolv error codes too (as in fmtr)
